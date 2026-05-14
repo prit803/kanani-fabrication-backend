@@ -1,0 +1,101 @@
+.venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# Environment variables
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# SQLite databases
+*.sqlite3
+*.db
+
+# FastAPI / Uvicorn
+uvicorn.log
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Type checker
+.pyre/
+
+# Temporary files
+tmp/
+temp/
+
+# Alembic migrations (optional)
+# Uncomment if you don't want migration versions tracked
+# alembic/versions/
+
+# Static / media uploads (optional)
+# static/uploads/
+# media/
+
+# Docker
+docker-compose.override.yml
+
+# Secrets / keys
+*.pem
+*.key
+secrets.json
+
+# Node modules (if using frontend)
+node_modules/
+
+# Cache
+.cache/
