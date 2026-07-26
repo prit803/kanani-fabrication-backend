@@ -4,7 +4,7 @@ from app.database import Base, engine
 
 from app.routes.vendor_routes import router as vendor_router
 from app.routes.bill_routes import router as bill_router
-
+from app.routes.bill_item_routes import router as bill_item_router 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -21,3 +21,4 @@ def home():
 
 app.include_router(vendor_router)
 app.include_router(bill_router)
+app.include_router(bill_item_router)

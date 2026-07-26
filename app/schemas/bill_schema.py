@@ -1,19 +1,19 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
+from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel
 
 
-class BillCreate(BaseModel):
+class BillRequest(BaseModel):
+    bill_id: Optional[int] = None
     vendor_id: int
     bill_text_gujarati: Optional[str] = None
-    amount: float
+    amount: Decimal
     bill_date: date
-    status: Optional[str] = "pending"
+    status: str = "pending"
     audio_file_url: Optional[str] = None
 
 
-class BillResponse(BillCreate):
-    bill_id: int
-
-    class Config:
-        from_attributes = True
+class BillResponse(BillRequest):
+    pass
