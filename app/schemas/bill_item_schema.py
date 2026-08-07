@@ -3,8 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 class BillItemRequest(BaseModel):
+
     bill_item_id: Optional[int] = None
 
     bill_id: int = Field(..., gt=0)
@@ -25,13 +25,11 @@ class BillItemRequest(BaseModel):
         ge=0
     )
 
-    amount: Decimal = Field(
-        ...,
-        ge=0
-    )
+    audio_file_url: Optional[str] = None
 
 
 class BillItemResponse(BaseModel):
+
     bill_item_id: int
 
     bill_id: int
@@ -43,6 +41,8 @@ class BillItemResponse(BaseModel):
     rate: Decimal
 
     amount: Decimal
+
+    audio_file_url: Optional[str]
 
     class Config:
         from_attributes = True

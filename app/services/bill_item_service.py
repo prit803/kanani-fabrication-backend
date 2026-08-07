@@ -237,7 +237,14 @@ class BillItemService:
 
             bill_item.rate = request.rate
 
-            bill_item.amount = request.quantity * request.rate
+            # Auto Calculate Amount
+            bill_item.amount = (
+                request.quantity * request.rate
+            )
+
+            bill_item.audio_file_url = (
+                request.audio_file_url
+            )
 
             db.commit()
 

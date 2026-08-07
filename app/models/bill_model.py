@@ -2,13 +2,12 @@ from sqlalchemy import (
     Boolean,
     Column,
     Integer,
-    Text,
     Date,
     Enum,
     ForeignKey,
-    DECIMAL,
     TIMESTAMP,
 )
+
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -30,16 +29,6 @@ class Bill(Base):
         nullable=False
     )
 
-    bill_text_gujarati = Column(
-        Text,
-        nullable=True
-    )
-
-    amount = Column(
-        DECIMAL(10, 2),
-        nullable=False
-    )
-
     bill_date = Column(
         Date,
         nullable=False
@@ -48,11 +37,6 @@ class Bill(Base):
     status = Column(
         Enum("pending", "paid"),
         default="pending"
-    )
-
-    audio_file_url = Column(
-        Text,
-        nullable=True
     )
 
     is_deleted = Column(

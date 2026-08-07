@@ -4,15 +4,23 @@ from app.models.bill_model import Bill
 from app.models.vendor_model import Vendor
 
 from app.utils.helper import (
-    model_to_dict,
-    models_to_list
+    model_to_dict
 )
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 
+from datetime import date
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from app.models.bill_model import Bill
+from app.models.vendor_model import Vendor
+from app.utils.response import ApiResponse
+from app.utils.helper import model_to_dict
+from app.models.bill_item_model import BillItem
+from sqlalchemy import func
+
 
 logger = get_logger(__name__)
-
 
 class BillService:
 
@@ -21,19 +29,9 @@ class BillService:
         db: Session,
         bill_id: int | None = None
     ):
-        """
-        Get Bill List or Single Bill
-        """
-
         try:
 
-            logger.info("Fetching bill data.")
-
             if bill_id is not None:
-
-                logger.info(
-                    f"Fetching bill id : {bill_id}"
-                )
 
                 bill = (
                     db.query(Bill)
@@ -44,12 +42,7 @@ class BillService:
                     .first()
                 )
 
-                if bill is None:
-
-                    logger.warning(
-                        f"Bill not found. Bill Id : {bill_id}"
-                    )
-
+                if not bill:
                     return ApiResponse.error(
                         error_message="Bill not found.",
                         status_code=404
@@ -57,15 +50,13 @@ class BillService:
 
                 data = model_to_dict(bill)
 
-                if bill.vendor:
-
-                    data["vendor"] = model_to_dict(
-                        bill.vendor
-                    )
-
-                logger.info(
-                    f"Bill fetched successfully. Bill Id : {bill_id}"
+                total_amount = sum(
+                    float(item.amount)
+                    for item in bill.bill_items
+                    if not item.is_deleted
                 )
+
+                data["total_amount"] = total_amount
 
                 return ApiResponse.success(
                     data=data,
@@ -77,40 +68,34 @@ class BillService:
                 .filter(
                     Bill.is_deleted.is_(False)
                 )
-                .order_by(
-                    Bill.bill_date.desc(),
-                    Bill.bill_id.desc()
-                )
                 .all()
             )
 
-            response = []
+            result = []
 
             for bill in bills:
 
-                item = model_to_dict(bill)
+                data = model_to_dict(bill)
 
-                if bill.vendor:
+                total_amount = sum(
+                    float(item.amount)
+                    for item in bill.bill_items
+                    if not item.is_deleted
+                )
 
-                    item["vendor"] = model_to_dict(
-                        bill.vendor
-                    )
+                data["total_amount"] = total_amount
 
-                response.append(item)
-
-            logger.info(
-                f"Total bills fetched : {len(response)}"
-            )
+                result.append(data)
 
             return ApiResponse.success(
-                data=response,
+                data=result,
                 message="Bill list fetched successfully."
             )
 
         except Exception:
 
             logger.exception(
-                "Exception occurred while fetching bill."
+                "Exception while fetching bill."
             )
 
             return ApiResponse.error(
@@ -123,15 +108,8 @@ class BillService:
         db: Session,
         request
     ):
-        """
-        Create or Update Bill
-        """
-
         try:
 
-            # -----------------------------
-            # Validate Vendor
-            # -----------------------------
             vendor = (
                 db.query(Vendor)
                 .filter(
@@ -141,25 +119,14 @@ class BillService:
                 .first()
             )
 
-            if vendor is None:
-
-                logger.warning(
-                    f"Vendor not found. Vendor Id : {request.vendor_id}"
-                )
+            if not vendor:
 
                 return ApiResponse.error(
                     error_message="Vendor not found.",
                     status_code=404
                 )
 
-            # -----------------------------
-            # Update Bill
-            # -----------------------------
-            if request.bill_id is not None:
-
-                logger.info(
-                    f"Updating bill. Bill Id : {request.bill_id}"
-                )
+            if request.bill_id:
 
                 bill = (
                     db.query(Bill)
@@ -170,11 +137,7 @@ class BillService:
                     .first()
                 )
 
-                if bill is None:
-
-                    logger.warning(
-                        f"Bill not found. Bill Id : {request.bill_id}"
-                    )
+                if not bill:
 
                     return ApiResponse.error(
                         error_message="Bill not found.",
@@ -183,12 +146,7 @@ class BillService:
 
                 message = "Bill updated successfully."
 
-            # -----------------------------
-            # Create Bill
-            # -----------------------------
             else:
-
-                logger.info("Creating new bill.")
 
                 bill = Bill()
 
@@ -196,41 +154,15 @@ class BillService:
 
                 message = "Bill created successfully."
 
-            # -----------------------------
-            # Save Data
-            # -----------------------------
             bill.vendor_id = request.vendor_id
-
-            bill.bill_text_gujarati = (
-                request.bill_text_gujarati.strip()
-                if request.bill_text_gujarati
-                else None
-            )
-
-            bill.amount = request.amount
-
             bill.bill_date = request.bill_date
-
             bill.status = request.status
 
-            bill.audio_file_url = (
-                request.audio_file_url.strip()
-                if request.audio_file_url
-                else None
-            )
-
             db.commit()
-
             db.refresh(bill)
 
-            response = model_to_dict(bill)
-
-            response["vendor"] = model_to_dict(vendor)
-
-            logger.info(message)
-
             return ApiResponse.success(
-                data=response,
+                data=model_to_dict(bill),
                 message=message
             )
 
@@ -239,7 +171,7 @@ class BillService:
             db.rollback()
 
             logger.exception(
-                "Exception occurred while saving bill."
+                "Exception while saving bill."
             )
 
             return ApiResponse.error(
@@ -247,5 +179,224 @@ class BillService:
                 status_code=500
             )
 
+    @staticmethod
+    def delete_bill(
+        db: Session,
+        bill_id: int
+    ):
+        try:
+
+            bill = (
+                db.query(Bill)
+                .filter(
+                    Bill.bill_id == bill_id,
+                    Bill.is_deleted.is_(False)
+                )
+                .first()
+            )
+
+            if not bill:
+
+                return ApiResponse.error(
+                    error_message="Bill not found.",
+                    status_code=404
+                )
+
+            bill.is_deleted = True
+
+            db.commit()
+
+            return ApiResponse.success(
+                data=None,
+                message="Bill deleted successfully."
+            )
+
+        except Exception:
+
+            db.rollback()
+
+            logger.exception(
+                "Exception while deleting bill."
+            )
+
+            return ApiResponse.error(
+                error_message="Internal Server Error.",
+                status_code=500
+            )
 
     
+
+    # add inside BillService class
+
+    @staticmethod
+    def get_vendor_bill_total(
+        db: Session,
+        vendor_id: int,
+        from_date: date,
+        to_date: date
+    ):
+        try:
+
+            vendor = (
+                db.query(Vendor)
+                .filter(
+                    Vendor.vendor_id == vendor_id,
+                    Vendor.is_deleted.is_(False)
+                )
+                .first()
+            )
+
+            if not vendor:
+                return ApiResponse.error(
+                    error_message="Vendor not found.",
+                    status_code=404
+                )
+
+            total_amount = (
+                db.query(
+                    func.coalesce(
+                        func.sum(BillItem.amount),
+                        0
+                    )
+                )
+                .join(
+                    Bill,
+                    Bill.bill_id == BillItem.bill_id
+                )
+                .filter(
+                    Bill.vendor_id == vendor_id,
+                    Bill.bill_date >= from_date,
+                    Bill.bill_date <= to_date,
+                    Bill.is_deleted.is_(False),
+                    BillItem.is_deleted.is_(False)
+                )
+                .scalar()
+            )
+
+            total_bill_count = (
+                db.query(Bill)
+                .filter(
+                    Bill.vendor_id == vendor_id,
+                    Bill.bill_date >= from_date,
+                    Bill.bill_date <= to_date,
+                    Bill.is_deleted.is_(False)
+                )
+                .count()
+            )
+
+            return ApiResponse.success(
+                data={
+                    "vendor_id": vendor.vendor_id,
+                    "vendor_name": vendor.vendor_name,
+                    "from_date": str(from_date),
+                    "to_date": str(to_date),
+                    "total_bill_count": total_bill_count,
+                    "total_amount": float(total_amount)
+                },
+                message="Vendor bill total fetched successfully."
+            )
+
+        except Exception:
+
+            logger.exception(
+                "Exception occurred while fetching vendor bill total."
+            )
+
+            return ApiResponse.error(
+                error_message="Internal Server Error.",
+                status_code=500
+            )
+
+    @staticmethod
+    def get_bill_pdf_data(
+        db: Session,
+        vendor_id: int,
+        from_date: date,
+        to_date: date
+    ):
+        try:
+
+            vendor = (
+                db.query(Vendor)
+                .filter(
+                    Vendor.vendor_id == vendor_id,
+                    Vendor.is_deleted.is_(False)
+                )
+                .first()
+            )
+
+            if not vendor:
+                return ApiResponse.error(
+                    error_message="Vendor not found.",
+                    status_code=404
+                )
+
+            bills = (
+                db.query(Bill)
+                .filter(
+                    Bill.vendor_id == vendor_id,
+                    Bill.bill_date >= from_date,
+                    Bill.bill_date <= to_date,
+                    Bill.is_deleted.is_(False)
+                )
+                .order_by(Bill.bill_date.asc())
+                .all()
+            )
+
+            total_amount = 0
+            items = []
+            sr_no = 1
+
+            for bill in bills:
+
+                for item in bill.bill_items:
+
+                    if item.is_deleted:
+                        continue
+
+                    amount = float(item.amount)
+
+                    total_amount += amount
+
+                    items.append({
+                        "sr_no": sr_no,
+                        "bill_id": bill.bill_id,
+                        "bill_date": bill.bill_date.strftime("%d/%m/%Y"),
+                        "description": item.item_description,
+                        "quantity": float(item.quantity),
+                        "rate": float(item.rate),
+                        "amount": amount,
+                        "audio_file_url": item.audio_file_url
+                    })
+
+                    sr_no += 1
+
+            return ApiResponse.success(
+                data={
+                    "vendor_id": vendor.vendor_id,
+                    "vendor_name": vendor.vendor_name,
+                    "mobile_number": vendor.mobile_number,
+                    "shop_name": vendor.shop_name,
+                    "address": vendor.address,
+
+                    "from_date": from_date.strftime("%d/%m/%Y"),
+                    "to_date": to_date.strftime("%d/%m/%Y"),
+
+                    "total_bill_count": len(items),
+                    "total_amount": total_amount,
+
+                    "items": items
+                },
+                message="Bill PDF data fetched successfully."
+            )
+
+        except Exception:
+
+            logger.exception(
+                "Exception while fetching bill pdf data."
+            )
+
+            return ApiResponse.error(
+                error_message="Internal Server Error.",
+                status_code=500
+            )

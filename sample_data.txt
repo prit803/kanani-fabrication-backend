@@ -1,0 +1,91 @@
+[
+  {
+    "vendor_name": "Rameshbhai Patel",
+    "mobile_number": "9876543210",
+    "shop_name": "Shree Ram Fabrication Works",
+    "address": "GIDC Phase 1, Vatva, Ahmedabad, Gujarat",
+    "photo_url": "https://example.com/photos/vendor1.jpg",
+    "status": "active"
+  },
+  {
+    "vendor_name": "Maheshbhai Solanki",
+    "mobile_number": "9825012345",
+    "shop_name": "Om Steel Fabrication",
+    "address": "Naroda GIDC, Ahmedabad, Gujarat",
+    "photo_url": "https://example.com/photos/vendor2.jpg",
+    "status": "active"
+  },
+  {
+    "vendor_name": "Jigneshbhai Chauhan",
+    "mobile_number": "9909123456",
+    "shop_name": "Jay Ambe Engineering & Fabrication",
+    "address": "Makarpura GIDC, Vadodara, Gujarat",
+    "photo_url": "https://example.com/photos/vendor3.jpg",
+    "status": "active"
+  },
+  {
+    "vendor_name": "Kiritbhai Parmar",
+    "mobile_number": "9723456789",
+    "shop_name": "Krishna Welding & Fabrication",
+    "address": "Sachin GIDC, Surat, Gujarat",
+    "photo_url": "https://example.com/photos/vendor4.jpg",
+    "status": "active"
+  },
+  {
+    "vendor_name": "Bhaveshbhai Makwana",
+    "mobile_number": "9898765432",
+    "shop_name": "Umiya Steel Works",
+    "address": "Shapar-Veraval GIDC, Rajkot, Gujarat",
+    "photo_url": "https://example.com/photos/vendor5.jpg",
+    "status": "active"
+  }
+]
+
+
+[
+  {
+     
+    "vendor_id": 1,
+    "bill_text_gujarati": "MS એંગલ 50x50 - 120 કિગ્રા, વેલ્ડિંગ કામ, કટિંગ અને ડ્રિલિંગ ચાર્જ",
+    "amount": 18500,
+    "bill_date": "2026-08-01",
+    "status": "pending",
+    "audio_file_url": "https://example.com/audio/bill1.mp3"
+  },
+  {
+    
+    "vendor_id": 2,
+    "bill_text_gujarati": "સ્ટીલ પાઇપ 2 ઇંચ - 35 નંગ, ગેસ કટિંગ અને ફેબ્રિકેશન ચાર્જ",
+    "amount": 27450,
+    "bill_date": "2026-08-03",
+    "status": "approved",
+    "audio_file_url": "https://example.com/audio/bill2.mp3"
+  },
+  {
+    
+    "vendor_id": 3,
+    "bill_text_gujarati": "MS ચેનલ 100x50 - 18 નંગ, વેલ્ડિંગ રોડ, ગ્રાઇન્ડિંગ અને પેઇન્ટિંગ",
+    "amount": 32900,
+    "bill_date": "2026-08-04",
+    "status": "pending",
+    "audio_file_url": "https://example.com/audio/bill3.mp3"
+  },
+  {
+   
+    "vendor_id": 4,
+    "bill_text_gujarati": "SS શીટ 2 મીમી - 10 શીટ, TIG વેલ્ડિંગ અને પોલિશિંગ કામ",
+    "amount": 46800,
+    "bill_date": "2026-08-05",
+    "status": "rejected",
+    "audio_file_url": "https://example.com/audio/bill4.mp3"
+  },
+  {
+    
+    "vendor_id": 5,
+    "bill_text_gujarati": "MS ફ્લેટ 40x6 - 250 કિગ્રા, ગેટ ફેબ્રિકેશન અને ઇન્સ્ટોલેશન ચાર્જ",
+    "amount": 21500,
+    "bill_date": "2026-08-06",
+    "status": "pending",
+    "audio_file_url": "https://example.com/audio/bill5.mp3"
+  }
+]

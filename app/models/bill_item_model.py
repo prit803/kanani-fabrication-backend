@@ -51,6 +51,11 @@ class BillItem(Base):
         nullable=False
     )
 
+    audio_file_url = Column(
+        Text,
+        nullable=True
+    )
+
     is_deleted = Column(
         Boolean,
         default=False
