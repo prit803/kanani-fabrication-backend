@@ -6,6 +6,7 @@ from app.routes.vendor_routes import router as vendor_router
 from app.routes.bill_routes import router as bill_router
 from app.routes.bill_item_routes import router as bill_item_router 
 from app.routes.stt_routes import router as stt_router
+from app.routes.admin_routes import router as admin_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -39,3 +40,4 @@ app.include_router(vendor_router)
 app.include_router(bill_router)
 app.include_router(bill_item_router)
 app.include_router(stt_router)
+app.include_router(admin_router)
