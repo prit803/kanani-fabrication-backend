@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.vendor_schema import VendorRequest
 from app.services.vendor_service import VendorService
 
 router = APIRouter(
@@ -24,12 +23,24 @@ def get_vendor(
 
 @router.post("")
 def save_vendor(
-    request: VendorRequest,
+    vendor_id: int | None = Form(None),
+    vendor_name: str = Form(...),
+    mobile_number: str = Form(...),
+    shop_name: str | None = Form(None),
+    address: str | None = Form(None),
+    status: str = Form("active"),
+    photo_file: UploadFile | None = File(None),
     db: Session = Depends(get_db)
 ):
     return VendorService.save_vendor(
         db=db,
-        request=request
+        vendor_id=vendor_id,
+        vendor_name=vendor_name,
+        mobile_number=mobile_number,
+        shop_name=shop_name,
+        address=address,
+        status=status,
+        photo_file=photo_file
     )
 
 

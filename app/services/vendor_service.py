@@ -1,12 +1,19 @@
+from datetime import datetime
+import shutil
+from pathlib import Path
+
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
-from app.schemas.vendor_schema import VendorRequest
 from app.utils.helper import model_to_dict, models_to_list
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
+BASE_DIR = Path(__file__).resolve().parents[2]
+VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
+VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 class VendorService:
@@ -91,7 +98,13 @@ class VendorService:
     @staticmethod
     def save_vendor(
         db: Session,
-        request: VendorRequest
+        vendor_id: int | None,
+        vendor_name: str,
+        mobile_number: str,
+        shop_name: str | None = None,
+        address: str | None = None,
+        status: str = "active",
+        photo_file: UploadFile | None = None,
     ):
         """
         Create or Update Vendor
@@ -99,16 +112,16 @@ class VendorService:
 
         try:
 
-            if request.vendor_id is not None:
+            if vendor_id is not None:
 
                 logger.info(
-                    f"Updating vendor. Vendor Id : {request.vendor_id}"
+                    f"Updating vendor. Vendor Id : {vendor_id}"
                 )
 
                 vendor = (
                     db.query(Vendor)
                     .filter(
-                        Vendor.vendor_id == request.vendor_id,
+                        Vendor.vendor_id == vendor_id,
                         Vendor.is_deleted.is_(False)
                     )
                     .first()
@@ -117,7 +130,7 @@ class VendorService:
                 if vendor is None:
 
                     logger.warning(
-                        f"Vendor not found. Vendor Id : {request.vendor_id}"
+                        f"Vendor not found. Vendor Id : {vendor_id}"
                     )
 
                     return ApiResponse.error(
@@ -139,23 +152,42 @@ class VendorService:
 
             # Save Data
 
-            vendor.vendor_name = request.vendor_name.strip()
-            vendor.mobile_number = request.mobile_number.strip()
+            vendor.vendor_name = vendor_name.strip()
+            vendor.mobile_number = mobile_number.strip()
             vendor.shop_name = (
-                request.shop_name.strip()
-                if request.shop_name
+                shop_name.strip()
+                if shop_name
                 else None
             )
 
             vendor.address = (
-                request.address.strip()
-                if request.address
+                address.strip()
+                if address
                 else None
             )
 
-            vendor.photo_url = request.photo_url
+            if photo_file and photo_file.filename:
 
-            vendor.status = request.status
+                safe_file_name = Path(photo_file.filename).name
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                file_extension = Path(safe_file_name).suffix.lower()
+                stored_file_name = (
+                    f"vendor_{vendor_id or 'new'}_{timestamp}{file_extension}"
+                )
+                photo_path = VENDOR_PHOTO_FOLDER / stored_file_name
+
+                with open(photo_path, "wb") as buffer:
+                    shutil.copyfileobj(photo_file.file, buffer)
+
+                vendor.photo_url = photo_path.as_posix()
+
+                logger.info(f"Vendor photo saved at : {photo_path}")
+
+            elif vendor_id is None:
+
+                vendor.photo_url = None
+
+            vendor.status = status
 
             db.commit()
 
