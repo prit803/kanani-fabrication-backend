@@ -1,8 +1,8 @@
 fastapi
-uvicorn
-sqlalchemy
+pydantic
 pymysql
 python-dotenv
-pydantic
-sarvamai
 python-multipart
+sarvamai
+sqlalchemy
+uvicorn
