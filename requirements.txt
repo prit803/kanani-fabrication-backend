@@ -6,3 +6,13 @@ python-multipart
 sarvamai
 sqlalchemy
 uvicorn
+WeasyPrint
+Jinja2
+fastapi
+pydantic
+pymysql
+python-dotenv
+python-multipart
+sarvamai
+sqlalchemy
+uvicorn
