@@ -19,10 +19,7 @@ VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 class VendorService:
 
     @staticmethod
-    def get_vendor(
-        db: Session,
-        vendor_id: int | None = None
-    ):
+    def get_vendor(db: Session, vendor_id: int | None = None):
         """
         Get Vendor List or Single Vendor
         """
@@ -37,62 +34,44 @@ class VendorService:
 
                 vendor = (
                     db.query(Vendor)
-                    .filter(
-                        Vendor.vendor_id == vendor_id,
-                        Vendor.is_deleted.is_(False)
-                    )
+                    .filter(Vendor.vendor_id == vendor_id, Vendor.is_deleted.is_(False))
                     .first()
                 )
 
                 if vendor is None:
 
-                    logger.warning(
-                        f"Vendor not found. Vendor Id : {vendor_id}"
-                    )
+                    logger.warning(f"Vendor not found. Vendor Id : {vendor_id}")
 
                     return ApiResponse.error(
-                        error_message="Vendor not found.",
-                        status_code=404
+                        error_message="Vendor not found.", status_code=404
                     )
 
-                logger.info(
-                    f"Vendor fetched successfully. Vendor Id : {vendor_id}"
-                )
+                logger.info(f"Vendor fetched successfully. Vendor Id : {vendor_id}")
 
                 return ApiResponse.success(
-                    data=model_to_dict(vendor),
-                    message="Vendor fetched successfully."
+                    data=model_to_dict(vendor), message="Vendor fetched successfully."
                 )
 
             vendors = (
                 db.query(Vendor)
-                .filter(
-                    Vendor.is_deleted.is_(False)
-                )
-                .order_by(
-                    Vendor.vendor_name.asc()
-                )
+                .filter(Vendor.is_deleted.is_(False))
+                .order_by(Vendor.vendor_name.asc())
                 .all()
             )
 
-            logger.info(
-                f"Total vendors fetched : {len(vendors)}"
-            )
+            logger.info(f"Total vendors fetched : {len(vendors)}")
 
             return ApiResponse.success(
                 data=models_to_list(vendors),
-                message="Vendor list fetched successfully."
+                message="Vendor list fetched successfully.",
             )
 
         except Exception as ex:
 
-            logger.exception(
-                "Exception occurred while fetching vendor."
-            )
+            logger.exception("Exception occurred while fetching vendor.")
 
             return ApiResponse.error(
-                error_message="Internal Server Error.",
-                status_code=500
+                error_message="Internal Server Error.", status_code=500
             )
 
     @staticmethod
@@ -114,28 +93,20 @@ class VendorService:
 
             if vendor_id is not None:
 
-                logger.info(
-                    f"Updating vendor. Vendor Id : {vendor_id}"
-                )
+                logger.info(f"Updating vendor. Vendor Id : {vendor_id}")
 
                 vendor = (
                     db.query(Vendor)
-                    .filter(
-                        Vendor.vendor_id == vendor_id,
-                        Vendor.is_deleted.is_(False)
-                    )
+                    .filter(Vendor.vendor_id == vendor_id, Vendor.is_deleted.is_(False))
                     .first()
                 )
 
                 if vendor is None:
 
-                    logger.warning(
-                        f"Vendor not found. Vendor Id : {vendor_id}"
-                    )
+                    logger.warning(f"Vendor not found. Vendor Id : {vendor_id}")
 
                     return ApiResponse.error(
-                        error_message="Vendor not found.",
-                        status_code=404
+                        error_message="Vendor not found.", status_code=404
                     )
 
                 message = "Vendor updated successfully."
@@ -154,17 +125,9 @@ class VendorService:
 
             vendor.vendor_name = vendor_name.strip()
             vendor.mobile_number = mobile_number.strip()
-            vendor.shop_name = (
-                shop_name.strip()
-                if shop_name
-                else None
-            )
+            vendor.shop_name = shop_name.strip() if shop_name else None
 
-            vendor.address = (
-                address.strip()
-                if address
-                else None
-            )
+            vendor.address = address.strip() if address else None
 
             if photo_file and photo_file.filename:
 
@@ -179,7 +142,8 @@ class VendorService:
                 with open(photo_path, "wb") as buffer:
                     shutil.copyfileobj(photo_file.file, buffer)
 
-                vendor.photo_url = photo_path.as_posix()
+                # Store URL path (served by FastAPI or nginx) instead of filesystem path
+                vendor.photo_url = f"/storage/vendors/{stored_file_name}"
 
                 logger.info(f"Vendor photo saved at : {photo_path}")
 
@@ -195,81 +159,58 @@ class VendorService:
 
             logger.info(message)
 
-            return ApiResponse.success(
-                data=model_to_dict(vendor),
-                message=message
-            )
+            return ApiResponse.success(data=model_to_dict(vendor), message=message)
 
         except Exception as ex:
 
             db.rollback()
 
-            logger.exception(
-                "Exception occurred while saving vendor."
-            )
+            logger.exception("Exception occurred while saving vendor.")
 
             return ApiResponse.error(
-                error_message="Internal Server Error.",
-                status_code=500
+                error_message="Internal Server Error.", status_code=500
             )
 
     @staticmethod
-    def delete_vendor(
-        db: Session,
-        vendor_id: int
-    ):
+    def delete_vendor(db: Session, vendor_id: int):
         """
         Soft Delete Vendor
         """
 
         try:
 
-            logger.info(
-                f"Deleting vendor. Vendor Id : {vendor_id}"
-            )
+            logger.info(f"Deleting vendor. Vendor Id : {vendor_id}")
 
             vendor = (
                 db.query(Vendor)
-                .filter(
-                    Vendor.vendor_id == vendor_id,
-                    Vendor.is_deleted.is_(False)
-                )
+                .filter(Vendor.vendor_id == vendor_id, Vendor.is_deleted.is_(False))
                 .first()
             )
 
             if vendor is None:
 
-                logger.warning(
-                    f"Vendor not found. Vendor Id : {vendor_id}"
-                )
+                logger.warning(f"Vendor not found. Vendor Id : {vendor_id}")
 
                 return ApiResponse.error(
-                    error_message="Vendor not found.",
-                    status_code=404
+                    error_message="Vendor not found.", status_code=404
                 )
 
             vendor.is_deleted = True
 
             db.commit()
 
-            logger.info(
-                f"Vendor deleted successfully. Vendor Id : {vendor_id}"
-            )
+            logger.info(f"Vendor deleted successfully. Vendor Id : {vendor_id}")
 
             return ApiResponse.success(
-                data=None,
-                message="Vendor deleted successfully."
+                data=None, message="Vendor deleted successfully."
             )
 
         except Exception:
 
             db.rollback()
 
-            logger.exception(
-                "Exception occurred while deleting vendor."
-            )
+            logger.exception("Exception occurred while deleting vendor.")
 
             return ApiResponse.error(
-                error_message="Internal Server Error.",
-                status_code=500
+                error_message="Internal Server Error.", status_code=500
             )

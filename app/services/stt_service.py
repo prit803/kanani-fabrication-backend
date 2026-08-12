@@ -1,5 +1,3 @@
-
-
 from datetime import datetime
 from pathlib import Path
 
@@ -8,7 +6,6 @@ from fastapi import UploadFile
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 from app.services.stt_client import client as stt_client
-
 
 logger = get_logger(__name__)
 
@@ -45,9 +42,7 @@ class STTService:
 
             if file_extension not in allowed_extensions:
 
-                logger.warning(
-                    f"Unsupported audio file type : {file_extension}"
-                )
+                logger.warning(f"Unsupported audio file type : {file_extension}")
 
                 return ApiResponse.error(
                     error_message="Only audio files are allowed.",
@@ -96,24 +91,22 @@ class STTService:
 
                 text_file.write(formatted_text)
 
+            # Provide URL paths relative to the mounted /storage
             data = {
-                "inputFile": str(input_file_path),
-                "outputFile": str(output_file_path),
+                "inputFile": f"/storage/stt/input/{input_file_path.name}",
+                "outputFile": f"/storage/stt/output/{output_file_path.name}",
                 "transcription": formatted_text,
             }
 
             logger.info("Speech to text transcription completed successfully.")
 
             return ApiResponse.success(
-                data=data,
-                message="Speech to text completed successfully."
+                data=data, message="Speech to text completed successfully."
             )
 
         except Exception:
 
-            logger.exception(
-                "Exception occurred while processing speech to text."
-            )
+            logger.exception("Exception occurred while processing speech to text.")
 
             return ApiResponse.error(
                 error_message="Internal Server Error.",
