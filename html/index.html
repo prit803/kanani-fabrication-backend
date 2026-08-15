@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="gu">
 <head>
     <meta charset="UTF-8">
     <title>Bill PDF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         @page {
             size: A5 portrait;
@@ -13,7 +17,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: "Noto Sans Gujarati", Arial, sans-serif;
         }
 
         body {
@@ -138,46 +142,47 @@
     <div class="bill">
         <div class="bill-inner">
             <div class="top-contact">
-                <div>Mo. {{ mobile_number }}</div>
-                <div class="center">Only Labour Work</div>
-                <div>Mo. {{ mobile_number }}</div>
+                <div>મો. ૯૭૨૩૮ ૩૨૯૨૦</div>
+                <div class="center">ફક્ત મજૂરી કામ</div>
+                <div>મો. ૯૪૨૭૩૮૮૮૫૭</div>
             </div>
 
             <div class="company">
-                <h1>{{ shop_name }}</h1>
+                <h1>કાનાણી એન્જિનિયરિંગ વર્ક્સ</h1>
                 <p class="company-description">
-                    Labour work, welding work and all types of fabrication work are provided.
+                    લેથ કામ, વેલ્ડિંગ કામ તથા ક્વોરી અને અન્ય તમામ પ્રકારના <br>
+                    કામ કરી આપવામાં આવશે.
                 </p>
             </div>
 
             <div class="address-strip">
-                {{ address }}
+                નંદનવન શોપિંગ સેન્ટર, સાવલી રોડ, મુ. ઉદલપુર, તા. દેસર, જી. વડોદરા
             </div>
 
             <table class="bill-info">
                 <tr>
-                    <td width="55%"><b>Name :</b> {{ vendor_name }}</td>
-                    <td width="20%"><b>Bill No :</b></td>
+                    <td width="55%"><b>નામ :</b> {{ vendor_name }}</td>
+                    <td width="20%"><b>બિલ નં :</b></td>
                     <td width="25%" class="center">
-                        <div class="bill-no-box">{{ vendor_id }}</div>
+                        <div class="bill-no-box">{{ bill_no | default('N/A') }}</div>
                     </td>
                 </tr>
                 <tr>
-                    <td><b>Address :</b> {{ address }}</td>
-                    <td><b>Date :</b></td>
-                    <td class="center">{{ from_date }} to {{ to_date }}</td>
+                    <td><b>સરનામું :</b> {{ address }}</td>
+                    <td><b>તારીખ :</b></td>
+                    <td class="center">{{ from_date }} થી {{ to_date }}</td>
                 </tr>
             </table>
 
             <table class="item-table">
                 <thead>
                     <tr>
-                        <th width="6%">Sr</th>
-                        <th width="40%">Description</th>
-                        <th width="15%">Date</th>
-                        <th width="8%">Qty</th>
-                        <th width="13%">Rate</th>
-                        <th width="18%">Amount</th>
+                        <th width="6%">ક્રમ</th>
+                        <th width="40%">વિગત</th>
+                        <th width="15%">ચાલન નંબર</th>
+                        <th width="8%">નંગ</th>
+                        <th width="13%">ભાવ</th>
+                        <th width="18%">રકમ (₹)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -192,17 +197,17 @@
                     </tr>
                     {% endfor %}
                     <tr>
-                        <td colspan="5" class="right total">Total</td>
+                        <td colspan="5" class="right total">કુલ</td>
                         <td class="right total">₹ {{ total_amount }}</td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="footer">
-                <div>Note: Please keep this bill for record.</div>
+                <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
                 <div class="center">
                     _____________________<br>
-                    {{ shop_name }}
+                    કાનાણી એન્જિનિયરિંગ વર્ક્સ
                 </div>
             </div>
         </div>
