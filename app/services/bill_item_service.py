@@ -120,18 +120,53 @@ class BillItemService:
 
         try:
 
-            # Determine or create Bill
-            bill = None
+            if not getattr(request, "items", None):
+                return ApiResponse.error(
+                    error_message="At least one bill item is required.",
+                    status_code=400,
+                )
 
-            if getattr(request, "bill_id", None):
+            # Determine or create Bill.
+            # IMPORTANT: for update requests, bill may be identified by item.bill_id
+            # or by the existing bill_item_id, so we should not create a new bill
+            # automatically when an existing item is being updated.
+            bill = None
+            target_bill_id = getattr(request, "bill_id", None)
+
+            if target_bill_id is None:
+                for item_req in request.items:
+                    if getattr(item_req, "bill_id", None) is not None:
+                        target_bill_id = item_req.bill_id
+                        break
+
+            if target_bill_id is None:
+                for item_req in request.items:
+                    item_id = getattr(item_req, "bill_item_id", None)
+                    if item_id is None:
+                        continue
+
+                    existing_bill_item = (
+                        db.query(BillItem)
+                        .filter(
+                            BillItem.bill_item_id == item_id,
+                            BillItem.is_deleted.is_(False),
+                        )
+                        .first()
+                    )
+
+                    if existing_bill_item:
+                        target_bill_id = existing_bill_item.bill_id
+                        break
+
+            if target_bill_id is not None:
                 bill = (
                     db.query(Bill)
-                    .filter(Bill.bill_id == request.bill_id, Bill.is_deleted.is_(False))
+                    .filter(Bill.bill_id == target_bill_id, Bill.is_deleted.is_(False))
                     .first()
                 )
 
                 if bill is None:
-                    logger.warning(f"Bill not found. Bill Id : {request.bill_id}")
+                    logger.warning(f"Bill not found. Bill Id : {target_bill_id}")
 
                     return ApiResponse.error(
                         error_message="Bill not found.", status_code=404
@@ -166,7 +201,6 @@ class BillItemService:
                     bill.status = request.status
 
                 db.add(bill)
-                # flush to get bill_id for the items
                 db.commit()
                 db.refresh(bill)
 

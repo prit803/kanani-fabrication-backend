@@ -1,26 +1,18 @@
-from sqlalchemy.orm import Session
+from datetime import date, datetime
+import threading
+from pathlib import Path
 
+from jinja2 import Template
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from weasyprint import HTML
+
+from app.models.bill_item_model import BillItem
 from app.models.bill_model import Bill
 from app.models.vendor_model import Vendor
-
 from app.utils.helper import model_to_dict
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
-from jinja2 import Template
-from weasyprint import HTML
-from pathlib import Path
-import threading
-from datetime import datetime
-
-from datetime import date
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-from app.models.bill_model import Bill
-from app.models.vendor_model import Vendor
-from app.utils.response import ApiResponse
-from app.utils.helper import model_to_dict
-from app.models.bill_item_model import BillItem
-from sqlalchemy import func
 
 logger = get_logger(__name__)
 
@@ -275,15 +267,18 @@ class BillService:
             items = []
             sr_no = 1
 
+            def format_number(value):
+                if value is None:
+                    return 0
+                value = float(value)
+                return int(value) if value.is_integer() else value
+
             for bill in bills:
-
                 for item in bill.bill_items:
-
                     if item.is_deleted:
                         continue
 
                     amount = float(item.amount)
-
                     total_amount += amount
 
                     items.append(
@@ -292,16 +287,14 @@ class BillService:
                             "bill_id": bill.bill_id,
                             "bill_date": bill.bill_date.strftime("%d/%m/%Y"),
                             "description": item.item_description,
-                            "quantity": float(item.quantity),
-                            "rate": float(item.rate),
-                            "amount": amount,
+                            "quantity": format_number(item.quantity),
+                            "rate": format_number(item.rate),
+                            "amount": format_number(amount),
                             "audio_file_url": item.audio_file_url,
                         }
                     )
-
                     sr_no += 1
 
-            # Prepare data for template rendering
             pdf_data = {
                 "vendor_id": vendor.vendor_id,
                 "vendor_name": vendor.vendor_name,
@@ -311,39 +304,35 @@ class BillService:
                 "from_date": from_date.strftime("%d/%m/%Y"),
                 "to_date": to_date.strftime("%d/%m/%Y"),
                 "total_bill_count": len(items),
-                "total_amount": total_amount,
+                "total_amount": format_number(total_amount),
                 "items": items,
             }
 
-            # Load HTML template (expects Jinja2 placeholders in html/index.html)
-            template_path = Path("html") / "index.html"
+            project_root = Path(__file__).resolve().parents[2]
+            template_path = project_root / "html" / "index.html"
 
             if not template_path.exists():
-                # Fallback: return data only if template missing
                 return ApiResponse.success(
-                    data=pdf_data,
+                    data={**pdf_data, "pdf_url": None, "expires_in_seconds": 3600},
                     message="Bill PDF data fetched successfully. (template missing)",
                 )
 
             template_text = template_path.read_text(encoding="utf-8")
-            template = Template(template_text)
-            rendered_html = template.render(**pdf_data)
+            rendered_html = Template(template_text).render(**pdf_data)
 
-            # Ensure output directory exists
-            output_dir = Path("storage") / "output"
+            output_dir = project_root / "storage" / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
 
             filename = (
                 f"bill_{vendor.vendor_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
             )
             pdf_path = output_dir / filename
+            pdf_url = f"/storage/output/{filename}"
 
-            # Convert HTML to PDF using WeasyPrint (cross-platform, no GTK usage here)
-            HTML(string=rendered_html, base_url=str(Path.cwd())).write_pdf(
+            HTML(string=rendered_html, base_url=str(project_root)).write_pdf(
                 target=str(pdf_path)
             )
 
-            # Schedule deletion after 1 hour (3600 seconds)
             def _delete_file(path: Path):
                 try:
                     if path.exists():
@@ -355,9 +344,15 @@ class BillService:
             timer.daemon = True
             timer.start()
 
+            response_data = {
+                **pdf_data,
+                "pdf_url": pdf_url,
+                "expires_in_seconds": 3600,
+            }
+
             return ApiResponse.success(
-                data={"pdf_path": str(pdf_path), "expires_in_seconds": 3600},
-                message="Bill PDF generated successfully.",
+                data=response_data,
+                message="Bill PDF data fetched successfully.",
             )
 
         except Exception:
