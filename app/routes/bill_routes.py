@@ -22,15 +22,15 @@ def get_bill(
     )
 
 
-@router.post("")
-def save_bill(
-    request: BillRequest,
-    db: Session = Depends(get_db)
-):
-    return BillService.save_bill(
-        db=db,
-        request=request
-    )
+# @router.post("")
+# def save_bill(
+#     request: BillRequest,
+#     db: Session = Depends(get_db)
+# ):
+#     return BillService.save_bill(
+#         db=db,
+#         request=request
+#     )
 
 
 @router.delete("/{bill_id}")
@@ -63,11 +63,13 @@ def get_bill_pdf_data(
     vendor_id: int,
     from_date: date,
     to_date: date,
+    engineer_id: int | None = None,
     db: Session = Depends(get_db)
 ):
     return BillService.get_bill_pdf_data(
         db=db,
         vendor_id=vendor_id,
         from_date=from_date,
-        to_date=to_date
+        to_date=to_date,
+        engineer_id=engineer_id
     )

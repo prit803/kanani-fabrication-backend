@@ -10,6 +10,8 @@ class BillRequest(BaseModel):
 
     vendor_id: int
 
+    engineer_id: Optional[int] = None
+
     bill_date: date
 
     status: str = "pending"

@@ -57,8 +57,15 @@ class BillItemService:
                 response = model_to_dict(bill_item)
 
                 if bill_item.bill:
-
                     response["bill"] = model_to_dict(bill_item.bill)
+                    if bill_item.bill.vendor:
+                        response["bill"]["vendor"] = model_to_dict(
+                            bill_item.bill.vendor
+                        )
+                    if bill_item.bill.engineer:
+                        response["bill"]["engineer"] = model_to_dict(
+                            bill_item.bill.engineer
+                        )
 
                 logger.info(
                     f"Bill Item fetched successfully. Bill Item Id : {bill_item_id}"
@@ -89,8 +96,11 @@ class BillItemService:
                 row = model_to_dict(item)
 
                 if item.bill:
-
                     row["bill"] = model_to_dict(item.bill)
+                    if item.bill.vendor:
+                        row["bill"]["vendor"] = model_to_dict(item.bill.vendor)
+                    if item.bill.engineer:
+                        row["bill"]["engineer"] = model_to_dict(item.bill.engineer)
 
                 response.append(row)
 
@@ -172,6 +182,9 @@ class BillItemService:
                         error_message="Bill not found.", status_code=404
                     )
 
+                if getattr(request, "engineer_id", None) is not None:
+                    bill.engineer_id = request.engineer_id
+
             else:
                 # Create new bill - vendor must be provided and exist
                 if not getattr(request, "vendor_id", None):
@@ -196,6 +209,7 @@ class BillItemService:
 
                 bill = Bill()
                 bill.vendor_id = request.vendor_id
+                bill.engineer_id = getattr(request, "engineer_id", None)
                 bill.bill_date = getattr(request, "bill_date", None) or date.today()
                 if getattr(request, "status", None):
                     bill.status = request.status
@@ -268,6 +282,10 @@ class BillItemService:
             for bi in processed_items:
                 row = model_to_dict(bi)
                 row["bill"] = model_to_dict(bill)
+                if bill.vendor:
+                    row["bill"]["vendor"] = model_to_dict(bill.vendor)
+                if bill.engineer:
+                    row["bill"]["engineer"] = model_to_dict(bill.engineer)
                 response_items.append(row)
 
             message = "Bill items processed successfully."

@@ -5,10 +5,10 @@ from pathlib import Path
 from jinja2 import Template
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from weasyprint import HTML
 
 from app.models.bill_item_model import BillItem
 from app.models.bill_model import Bill
+from app.models.engineering_model import Engineering
 from app.models.vendor_model import Vendor
 from app.utils.helper import model_to_dict
 from app.utils.logger import get_logger
@@ -38,6 +38,12 @@ class BillService:
 
                 data = model_to_dict(bill)
 
+                if bill.vendor:
+                    data["vendor"] = model_to_dict(bill.vendor)
+
+                if bill.engineer:
+                    data["engineer"] = model_to_dict(bill.engineer)
+
                 total_amount = sum(
                     float(item.amount)
                     for item in bill.bill_items
@@ -57,6 +63,12 @@ class BillService:
             for bill in bills:
 
                 data = model_to_dict(bill)
+
+                if bill.vendor:
+                    data["vendor"] = model_to_dict(bill.vendor)
+
+                if bill.engineer:
+                    data["engineer"] = model_to_dict(bill.engineer)
 
                 total_amount = sum(
                     float(item.amount)
@@ -123,6 +135,7 @@ class BillService:
                 message = "Bill created successfully."
 
             bill.vendor_id = request.vendor_id
+            bill.engineer_id = getattr(request, "engineer_id", None) or bill.engineer_id
             bill.bill_date = request.bill_date
             bill.status = request.status
 
@@ -237,7 +250,13 @@ class BillService:
             )
 
     @staticmethod
-    def get_bill_pdf_data(db: Session, vendor_id: int, from_date: date, to_date: date):
+    def get_bill_pdf_data(
+        db: Session,
+        vendor_id: int,
+        from_date: date,
+        to_date: date,
+        engineer_id: int | None = None,
+    ):
         try:
 
             vendor = (
@@ -262,6 +281,39 @@ class BillService:
                 .order_by(Bill.bill_date.asc())
                 .all()
             )
+
+            engineer = None
+            if engineer_id is not None:
+                engineer = (
+                    db.query(Engineering)
+                    .filter(
+                        Engineering.engineer_id == engineer_id,
+                        Engineering.is_deleted.is_(False),
+                    )
+                    .first()
+                )
+
+            if engineer is None:
+                for bill in bills:
+                    if bill.engineer_id is None:
+                        continue
+                    engineer = (
+                        db.query(Engineering)
+                        .filter(
+                            Engineering.engineer_id == bill.engineer_id,
+                            Engineering.is_deleted.is_(False),
+                        )
+                        .first()
+                    )
+                    if engineer is not None:
+                        break
+
+            if engineer is None:
+                engineer = (
+                    db.query(Engineering)
+                    .filter(Engineering.name == "કાનાણી", Engineering.is_deleted.is_(False))
+                    .first()
+                )
 
             total_amount = 0
             items = []
@@ -295,6 +347,16 @@ class BillService:
                     )
                     sr_no += 1
 
+            bill_no = "N/A"
+            if bills:
+                bill_no = str(bills[0].bill_id)
+
+            sign_image_path = ""
+            if engineer and engineer.sign_image:
+                sign_image_path = engineer.sign_image
+                if sign_image_path.startswith("/storage/"):
+                    sign_image_path = sign_image_path.lstrip("/")
+
             pdf_data = {
                 "vendor_id": vendor.vendor_id,
                 "vendor_name": vendor.vendor_name,
@@ -305,6 +367,11 @@ class BillService:
                 "to_date": to_date.strftime("%d/%m/%Y"),
                 "total_bill_count": len(items),
                 "total_amount": format_number(total_amount),
+                "bill_no": bill_no,
+                "engineering_name": engineer.name if engineer else "કાનાણી એન્જિનિયરिंग વર્ક્સ",
+                "engineering_pan_number": engineer.pan_number if engineer else "",
+                "engineering_bank_account_number": engineer.bank_account_number if engineer else "",
+                "engineering_sign_image": sign_image_path,
                 "items": items,
             }
 
@@ -329,9 +396,21 @@ class BillService:
             pdf_path = output_dir / filename
             pdf_url = f"/storage/output/{filename}"
 
-            HTML(string=rendered_html, base_url=str(project_root)).write_pdf(
-                target=str(pdf_path)
-            )
+            try:
+                from weasyprint import HTML
+
+                HTML(string=rendered_html, base_url=str(project_root)).write_pdf(
+                    target=str(pdf_path)
+                )
+            except Exception as exc:
+                logger.warning(
+                    "PDF generation unavailable on this system; skipping file creation. %s",
+                    str(exc),
+                )
+                return ApiResponse.success(
+                    data={**pdf_data, "pdf_url": None, "expires_in_seconds": 0},
+                    message="Bill PDF data fetched successfully. PDF generation is unavailable on this system.",
+                )
 
             def _delete_file(path: Path):
                 try:

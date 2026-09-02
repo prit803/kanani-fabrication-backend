@@ -25,12 +25,13 @@ class CreateBillItemsRequest(BaseModel):
     """
     Request model for creating/updating multiple bill items in one call.
     If `bill_id` is not provided, a new bill will be created using
-    `vendor_id`, `bill_date` and `status`.
+    `vendor_id`, `bill_date`, `status` and optional `engineer_id`.
     """
 
     # Either supply an existing bill_id or vendor_id to create a new bill
     bill_id: Optional[int] = None
     vendor_id: Optional[int] = None
+    engineer_id: Optional[int] = None
     bill_date: Optional[date] = None
     status: Optional[str] = None
 
