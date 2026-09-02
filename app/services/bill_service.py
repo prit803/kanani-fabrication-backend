@@ -311,7 +311,9 @@ class BillService:
             if engineer is None:
                 engineer = (
                     db.query(Engineering)
-                    .filter(Engineering.name == "કાનાણી", Engineering.is_deleted.is_(False))
+                    .filter(
+                        Engineering.name == "કાનાણી", Engineering.is_deleted.is_(False)
+                    )
                     .first()
                 )
 
@@ -368,9 +370,13 @@ class BillService:
                 "total_bill_count": len(items),
                 "total_amount": format_number(total_amount),
                 "bill_no": bill_no,
-                "engineering_name": engineer.name if engineer else "કાનાણી એન્જિનિયરिंग વર્ક્સ",
+                "engineering_name": (
+                    engineer.name if engineer else "કાનાણી એન્જિનિયરिंग વર્ક્સ"
+                ),
                 "engineering_pan_number": engineer.pan_number if engineer else "",
-                "engineering_bank_account_number": engineer.bank_account_number if engineer else "",
+                "engineering_bank_account_number": (
+                    engineer.bank_account_number if engineer else ""
+                ),
                 "engineering_sign_image": sign_image_path,
                 "items": items,
             }

@@ -112,30 +112,156 @@ VENDORS = [
 ]
 
 BILLS = [
-    {"bill_id": 0, "vendor_id": 6, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
-    {"bill_id": 1, "vendor_id": 3, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
-    {"bill_id": 2, "vendor_id": 5, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
-    {"bill_id": 3, "vendor_id": 4, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
-    {"bill_id": 4, "vendor_id": 2, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
-    {"bill_id": 5, "vendor_id": 1, "bill_date": "2026-08-07", "status": "pending", "engineer_id": 0},
+    {
+        "bill_id": 0,
+        "vendor_id": 6,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
+    {
+        "bill_id": 1,
+        "vendor_id": 3,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
+    {
+        "bill_id": 2,
+        "vendor_id": 5,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
+    {
+        "bill_id": 3,
+        "vendor_id": 4,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
+    {
+        "bill_id": 4,
+        "vendor_id": 2,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
+    {
+        "bill_id": 5,
+        "vendor_id": 1,
+        "bill_date": "2026-08-07",
+        "status": "pending",
+        "engineer_id": 0,
+    },
 ]
 
 BILL_ITEMS = [
-    {"bill_id": 0, "item_description": "એમએસ એંગલ 50x50 - 120 કિલો", "quantity": 120, "rate": 78.5, "audio_file_url": ""},
-    {"bill_id": 0, "item_description": "વેલ્ડિંગ કામ", "quantity": 1, "rate": 2500, "audio_file_url": ""},
-    {"bill_id": 0, "item_description": "ગ્રાઇન્ડિંગ અને ફિનિશિંગ", "quantity": 1, "rate": 1200, "audio_file_url": ""},
-    {"bill_id": 1, "item_description": "એમએસ પાઇપ 2 ઇંચ", "quantity": 35, "rate": 520, "audio_file_url": ""},
-    {"bill_id": 1, "item_description": "ગેસ કટિંગ ચાર્જ", "quantity": 1, "rate": 1800, "audio_file_url": ""},
-    {"bill_id": 2, "item_description": "એમએસ ચેનલ 100x50", "quantity": 18, "rate": 980, "audio_file_url": ""},
-    {"bill_id": 2, "item_description": "વેલ્ડિંગ રોડ", "quantity": 8, "rate": 450, "audio_file_url": ""},
-    {"bill_id": 2, "item_description": "મજૂરી ચાર્જ", "quantity": 1, "rate": 3500, "audio_file_url": ""},
-    {"bill_id": 3, "item_description": "સ્ટેનલેસ સ્ટીલ શીટ 2 મીમી", "quantity": 10, "rate": 3200, "audio_file_url": ""},
-    {"bill_id": 3, "item_description": "ટીઆઈજી વેલ્ડિંગ", "quantity": 1, "rate": 4200, "audio_file_url": ""},
-    {"bill_id": 4, "item_description": "એમએસ ફ્લેટ 40x6", "quantity": 250, "rate": 72, "audio_file_url": ""},
-    {"bill_id": 4, "item_description": "ગેટ બનાવવાનું કામ", "quantity": 1, "rate": 6500, "audio_file_url": ""},
-    {"bill_id": 4, "item_description": "ઇન્સ્ટોલેશન ચાર્જ", "quantity": 1, "rate": 2500, "audio_file_url": ""},
-    {"bill_id": 5, "item_description": "જીઆઈ પાઇપ 1.5 ઇંચ", "quantity": 40, "rate": 610, "audio_file_url": ""},
-    {"bill_id": 5, "item_description": "આર્ક વેલ્ડિંગ", "quantity": 1, "rate": 3200, "audio_file_url": ""},
+    {
+        "bill_id": 0,
+        "item_description": "એમએસ એંગલ 50x50 - 120 કિલો",
+        "quantity": 120,
+        "rate": 78.5,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 0,
+        "item_description": "વેલ્ડિંગ કામ",
+        "quantity": 1,
+        "rate": 2500,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 0,
+        "item_description": "ગ્રાઇન્ડિંગ અને ફિનિશિંગ",
+        "quantity": 1,
+        "rate": 1200,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 1,
+        "item_description": "એમએસ પાઇપ 2 ઇંચ",
+        "quantity": 35,
+        "rate": 520,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 1,
+        "item_description": "ગેસ કટિંગ ચાર્જ",
+        "quantity": 1,
+        "rate": 1800,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 2,
+        "item_description": "એમએસ ચેનલ 100x50",
+        "quantity": 18,
+        "rate": 980,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 2,
+        "item_description": "વેલ્ડિંગ રોડ",
+        "quantity": 8,
+        "rate": 450,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 2,
+        "item_description": "મજૂરી ચાર્જ",
+        "quantity": 1,
+        "rate": 3500,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 3,
+        "item_description": "સ્ટેનલેસ સ્ટીલ શીટ 2 મીમી",
+        "quantity": 10,
+        "rate": 3200,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 3,
+        "item_description": "ટીઆઈજી વેલ્ડિંગ",
+        "quantity": 1,
+        "rate": 4200,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 4,
+        "item_description": "એમએસ ફ્લેટ 40x6",
+        "quantity": 250,
+        "rate": 72,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 4,
+        "item_description": "ગેટ બનાવવાનું કામ",
+        "quantity": 1,
+        "rate": 6500,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 4,
+        "item_description": "ઇન્સ્ટોલેશન ચાર્જ",
+        "quantity": 1,
+        "rate": 2500,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 5,
+        "item_description": "જીઆઈ પાઇપ 1.5 ઇંચ",
+        "quantity": 40,
+        "rate": 610,
+        "audio_file_url": "",
+    },
+    {
+        "bill_id": 5,
+        "item_description": "આર્ક વેલ્ડિંગ",
+        "quantity": 1,
+        "rate": 3200,
+        "audio_file_url": "",
+    },
 ]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -169,7 +295,12 @@ def seed_engineering(db):
     for item in ENGINEERING:
         db.execute(
             "INSERT INTO engineering (engineer_id, name, pan_number, bank_account_number, is_deleted) VALUES (?, ?, ?, ?, 0)",
-            (item["engineer_id"], item["name"], item.get("pan_number"), item.get("bank_account_number")),
+            (
+                item["engineer_id"],
+                item["name"],
+                item.get("pan_number"),
+                item.get("bank_account_number"),
+            ),
         )
     db.commit()
     print(f"Inserted engineering rows: {len(ENGINEERING)}")
@@ -196,7 +327,13 @@ def seed_bills(db):
     for bill in BILLS:
         db.execute(
             "INSERT INTO bills (bill_id, vendor_id, engineer_id, bill_date, status, is_deleted) VALUES (?, ?, ?, ?, ?, 0)",
-            (bill["bill_id"], bill["vendor_id"], bill["engineer_id"], bill["bill_date"], bill["status"]),
+            (
+                bill["bill_id"],
+                bill["vendor_id"],
+                bill["engineer_id"],
+                bill["bill_date"],
+                bill["status"],
+            ),
         )
     db.commit()
     print(f"Inserted bill rows: {len(BILLS)}")

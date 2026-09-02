@@ -20,7 +20,8 @@
             font-family: "Noto Sans Gujarati", Arial, sans-serif;
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             background: #fff;
@@ -201,82 +202,82 @@
     <div class="page">
         <div class="bill">
             <div class="bill-inner">
-            <div class="top-contact">
-                <div>મો. ૯૭૨૩૮ ૩૨૯૨૦</div>
-                <div class="center">ફક્ત મજૂરી કામ</div>
-                <div>મો. ૯૪૨૭૩૮૮૮૫૭</div>
-            </div>
-
-            <div class="company">
-                <h1>{{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}</h1>
-                <p class="company-description">
-                    લેથ કામ, વેલ્ડિંગ કામ તથા ક્વોરી અને અન્ય તમામ પ્રકારના <br>
-                    કામ કરી આપવામાં આવશે.
-                </p>
-            </div>
-
-            <div class="address-strip">
-                નંદનવન શોપિંગ સેન્ટર, સાવલી રોડ, મુ. ઉદલપુર, તા. દેસર, જી. વડોદરા
-            </div>
-
-            <table class="bill-info">
-                <tr>
-                    <td width="55%"><b>નામ :</b> {{ vendor_name }}</td>
-                    <td width="20%"><b>બિલ નં :</b></td>
-                    <td width="25%" class="center">
-                        <div class="bill-no-box">{{ bill_no }}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><b>સરનામું :</b> {{ address }}</td>
-                    <td><b>તારીખ :</b></td>
-                    <td class="center">{{ from_date }} થી {{ to_date }}</td>
-                </tr>
-            </table>
-
-            <table class="item-table">
-                <thead>
-                    <tr>
-                        <th width="6%">ક્રમ</th>
-                        <th width="40%">વિગત</th>
-                        <th width="15%">ચાલન નંબર</th>
-                        <th width="8%">નંગ</th>
-                        <th width="13%">ભાવ</th>
-                        <th width="18%">રકમ (₹)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td class="center">{{ item.sr_no }}</td>
-                        <td>{{ item.description }}</td>
-                        <td class="center">{{ item.bill_date }}</td>
-                        <td class="center">{{ item.quantity }}</td>
-                        <td class="right">{{ item.rate }}</td>
-                        <td class="right">{{ item.amount }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr>
-                        <td colspan="5" class="right total">કુલ</td>
-                        <td class="right total">₹ {{ total_amount }}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="footer">
-                <div class="footer-left">
-                    <div>પાન નંબર: {{ engineering_pan_number or '—' }}</div>
-                    <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '—' }}</div>
-                    <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
+                <div class="top-contact">
+                    <div>મો. ૯૭૨૩૮ ૩૨૯૨૦</div>
+                    <div class="center">ફક્ત મજૂરી કામ</div>
+                    <div>મો. ૯૪૨૭૩૮૮૮૫૭</div>
                 </div>
-                <div class="signature-block">
-                    {% if engineering_sign_image %}
-                    <img class="signature-image" src="{{ engineering_sign_image }}" alt="Signature" />
-                    {% endif %}
-                    _____________________<br>
-                    {{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}
+
+                <div class="company">
+                    <h1>{{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}</h1>
+                    <p class="company-description">
+                        લેથ કામ, વેલ્ડિંગ કામ તથા ક્વોરી અને અન્ય તમામ પ્રકારના <br>
+                        કામ કરી આપવામાં આવશે.
+                    </p>
                 </div>
-            </div>
+
+                <div class="address-strip">
+                    નંદનવન શોપિંગ સેન્ટર, સાવલી રોડ, મુ. ઉદલપુર, તા. દેસર, જી. વડોદરા
+                </div>
+
+                <table class="bill-info">
+                    <tr>
+                        <td width="55%"><b>નામ :</b> {{ vendor_name }}</td>
+                        <td width="20%"><b>બિલ નં :</b></td>
+                        <td width="25%" class="center">
+                            <div class="bill-no-box">{{ bill_no }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>સરનામું :</b> {{ address }}</td>
+                        <td><b>તારીખ :</b></td>
+                        <td class="center">{{ from_date }} થી {{ to_date }}</td>
+                    </tr>
+                </table>
+
+                <table class="item-table">
+                    <thead>
+                        <tr>
+                            <th width="6%">ક્રમ</th>
+                            <th width="40%">વિગત</th>
+                            <th width="15%">ચાલન નંબર</th>
+                            <th width="8%">નંગ</th>
+                            <th width="13%">ભાવ</th>
+                            <th width="18%">રકમ (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td class="center">{{ item.sr_no }}</td>
+                            <td>{{ item.description }}</td>
+                            <td class="center">{{ item.bill_date }}</td>
+                            <td class="center">{{ item.quantity }}</td>
+                            <td class="right">{{ item.rate }}</td>
+                            <td class="right">{{ item.amount }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5" class="right total">કુલ</td>
+                            <td class="right total">₹ {{ total_amount }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="footer">
+                    <div class="footer-left">
+                        <div>પાન નંબર: {{ engineering_pan_number or '—' }}</div>
+                        <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '—' }}</div>
+                        <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
+                    </div>
+                    <div class="signature-block">
+                        {% if engineering_sign_image %}
+                        <img class="signature-image" src="{{ engineering_sign_image }}" alt="Signature" />
+                        {% endif %}
+                        _____________________<br>
+                        {{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
