@@ -386,16 +386,35 @@ class BillService:
                 "items": items,
             }
 
+            gujarati_digit_translation = str.maketrans("0123456789", "૦૧૨૩૪૫૬૭૮૯")
+
+            def convert_render_numbers(value, key=None):
+                if key in {"engineering_sign_image", "audio_file_url"}:
+                    return value
+                if isinstance(value, dict):
+                    return {
+                        item_key: convert_render_numbers(item_value, item_key)
+                        for item_key, item_value in value.items()
+                    }
+                if isinstance(value, list):
+                    return [convert_render_numbers(item) for item in value]
+                if isinstance(value, (int, float, str)):
+                    return str(value).translate(gujarati_digit_translation)
+                return value
+
+            render_pdf_data = convert_render_numbers(pdf_data)
+            api_pdf_data = render_pdf_data
+
             template_path = project_root / "html" / "index.html"
 
             if not template_path.exists():
                 return ApiResponse.success(
-                    data={**pdf_data, "pdf_url": None, "expires_in_seconds": 3600},
+                    data={**api_pdf_data, "pdf_url": None, "expires_in_seconds": 3600},
                     message="Bill PDF data fetched successfully. (template missing)",
                 )
 
             template_text = template_path.read_text(encoding="utf-8")
-            rendered_html = Template(template_text).render(**pdf_data)
+            rendered_html = Template(template_text).render(**render_pdf_data)
 
             output_dir = project_root / "storage" / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -418,7 +437,7 @@ class BillService:
                     str(exc),
                 )
                 return ApiResponse.success(
-                    data={**pdf_data, "pdf_url": None, "expires_in_seconds": 0},
+                    data={**api_pdf_data, "pdf_url": None, "expires_in_seconds": 0},
                     message="Bill PDF data fetched successfully. PDF generation is unavailable on this system.",
                 )
 
@@ -434,7 +453,7 @@ class BillService:
             timer.start()
 
             response_data = {
-                **pdf_data,
+                **api_pdf_data,
                 "pdf_url": pdf_url,
                 "expires_in_seconds": 3600,
             }
