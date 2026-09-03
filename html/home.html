@@ -125,7 +125,8 @@
         }
 
         .item-table {
-            height: 120mm;
+            min-height: 120mm;
+            height: auto;
         }
 
         .item-table thead th {
@@ -139,23 +140,12 @@
         }
 
         .item-table tbody td {
+            min-height: 18px;
+            height: 18px;
             vertical-align: top;
             line-height: 1.3;
+            overflow: hidden;
             word-wrap: break-word;
-        }
-
-        .item-table .table-spacer {
-            height: 100%;
-        }
-
-        .item-table .table-spacer td {
-            height: 100%;
-            padding: 0;
-        }
-
-        .item-table .total-row td {
-            height: 28px;
-            vertical-align: middle;
         }
 
         .right {
@@ -227,7 +217,7 @@
                 </div>
 
                 <div class="address-strip">
-                    નંદનવન શોપિંગ સેન્ટર, સાવલી રોડ, મુ. ઉદલપુર, તા. દેસર, જી. વડોદરા પિન ૩૯૧૫૨૦
+                    નંદનવન શોપિંગ સેન્ટર, સાવલી રોડ, મુ. ઉદલપુર, તા. દેસર, જી. વડોદરા pin 391520
                 </div>
 
                 <table class="bill-info">
@@ -262,15 +252,12 @@
                             <td class="center">{{ item.sr_no }}</td>
                             <td>{{ item.description }}</td>
                             <td class="center">{{ item.bill_date }}</td>
-                                    <td class="center">{{ item.quantity }}</td>
-                                    <td class="right">{{ item.rate }}</td>
-                                    <td class="right">{{ item.amount }}</td>
-                                </tr>
-                        {% endfor %}
-                        <tr class="table-spacer">
-                            <td colspan="6"></td>
+                            <td class="center">{{ item.quantity }}</td>
+                            <td class="right">{{ item.rate }}</td>-
+                            <td class="right">{{ item.amount }}</td>
                         </tr>
-                        <tr class="total-row">
+                        {% endfor %}
+                        <tr>
                             <td colspan="5" class="right total">કુલ</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
@@ -279,8 +266,8 @@
 
                 <div class="footer">
                     <div class="footer-left">
-                        <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
-                        <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '' }}</div>
+                        <div>પાન નંબર: {{ engineering_pan_number or '—' }}</div>
+                        <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '—' }}</div>
                         <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
                     </div>
                     <div class="signature-block">
@@ -288,7 +275,7 @@
                         <img class="signature-image" src="{{ engineering_sign_image }}" alt="Signature" />
                         {% endif %}
                         _____________________<br>
-                        {{ engineering_name or "કાનાણી" }}એન્જિનિયરિંગ વર્ક્સ
+                        {{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}
                     </div>
                 </div>
             </div>

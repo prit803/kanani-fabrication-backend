@@ -353,11 +353,16 @@ class BillService:
             if bills:
                 bill_no = str(bills[0].bill_id)
 
+            project_root = Path(__file__).resolve().parents[2]
             sign_image_path = ""
             if engineer and engineer.sign_image:
-                sign_image_path = engineer.sign_image
-                if sign_image_path.startswith("/storage/"):
-                    sign_image_path = sign_image_path.lstrip("/")
+                stored_sign_image = engineer.sign_image.strip()
+                if stored_sign_image.startswith("/storage/"):
+                    stored_sign_image = stored_sign_image.lstrip("/")
+
+                sign_image_file = project_root / stored_sign_image
+                if sign_image_file.is_file():
+                    sign_image_path = sign_image_file.as_uri()
 
             pdf_data = {
                 "vendor_id": vendor.vendor_id,
@@ -381,7 +386,6 @@ class BillService:
                 "items": items,
             }
 
-            project_root = Path(__file__).resolve().parents[2]
             template_path = project_root / "html" / "index.html"
 
             if not template_path.exists():
