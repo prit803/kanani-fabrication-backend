@@ -278,9 +278,13 @@ class BillService:
                     Bill.bill_date <= to_date,
                     Bill.is_deleted.is_(False),
                 )
-                .order_by(Bill.bill_date.asc())
-                .all()
+                .order_by(Bill.bill_date.asc(), Bill.bill_id.asc())
             )
+
+            if engineer_id is not None:
+                bills = bills.filter(Bill.engineer_id == engineer_id)
+
+            bills = bills.all()
 
             engineer = None
             if engineer_id is not None:
@@ -372,7 +376,7 @@ class BillService:
                 "address": vendor.address,
                 "from_date": from_date.strftime("%d/%m/%Y"),
                 "to_date": to_date.strftime("%d/%m/%Y"),
-                "total_bill_count": len(items),
+                "total_bill_count": len(bills),
                 "total_amount": format_number(total_amount),
                 "bill_no": bill_no,
                 "engineering_name": (
@@ -417,7 +421,7 @@ class BillService:
                 return value
 
             render_pdf_data = convert_render_numbers(pdf_data)
-            api_pdf_data = render_pdf_data
+            api_pdf_data = pdf_data
 
             template_path = project_root / "html" / "index.html"
 
