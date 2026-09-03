@@ -122,6 +122,21 @@
 
         .bill-info td {
             height: 32px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .bill-info td:first-child {
+            width: 68%;
+        }
+
+        .bill-info td:nth-child(2) {
+            width: 14%;
+            white-space: nowrap;
+        }
+
+        .bill-info td:nth-child(3) {
+            width: 18%;
         }
 
         .item-table {
@@ -232,9 +247,9 @@
 
                 <table class="bill-info">
                     <tr>
-                        <td width="55%"><b>નામ :</b> {{ vendor_name }}</td>
-                        <td width="20%"><b>બિલ નં :</b></td>
-                        <td width="25%">
+                        <td width="68%"><b>નામ :</b> {{ vendor_name }}</td>
+                        <td width="14%"><b>બિલ નં :</b></td>
+                        <td width="18%">
                             <div class="bill-no-box">{{ bill_no }}</div>
                         </td>
                     </tr>
