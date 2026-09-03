@@ -388,6 +388,18 @@ class BillService:
 
             gujarati_digit_translation = str.maketrans("0123456789", "૦૧૨૩૪૫૬૭૮૯")
 
+            gujarati_number_fields = {
+                "bill_no",
+                "from_date",
+                "to_date",
+                "sr_no",
+                "bill_date",
+                "quantity",
+                "rate",
+                "amount",
+                "total_amount",
+            }
+
             def convert_render_numbers(value, key=None):
                 if key in {"engineering_sign_image", "audio_file_url"}:
                     return value
@@ -398,7 +410,9 @@ class BillService:
                     }
                 if isinstance(value, list):
                     return [convert_render_numbers(item) for item in value]
-                if isinstance(value, (int, float, str)):
+                if key in gujarati_number_fields and isinstance(
+                    value, (int, float, str)
+                ):
                     return str(value).translate(gujarati_digit_translation)
                 return value
 
