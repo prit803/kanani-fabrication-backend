@@ -99,3 +99,4 @@ node_modules/
 
 # Cache
 .cache/
+storage/
