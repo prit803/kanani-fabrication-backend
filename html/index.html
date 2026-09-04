@@ -126,19 +126,6 @@
             word-break: break-word;
         }
 
-        .bill-info td:first-child {
-            width: 68%;
-        }
-
-        .bill-info td:nth-child(2) {
-            width: 14%;
-            white-space: nowrap;
-        }
-
-        .bill-info td:nth-child(3) {
-            width: 18%;
-        }
-
         .item-table {
             height: 90mm;
         }
@@ -154,23 +141,12 @@
         }
 
         .item-table tbody td {
+            min-height: 18px;
+            height: 18px;
             vertical-align: top;
             line-height: 1.3;
+            overflow: hidden;
             word-wrap: break-word;
-        }
-
-        .item-table .table-spacer {
-            height: 100%;
-        }
-
-        .item-table .table-spacer td {
-            height: 100%;
-            padding: 0;
-        }
-
-        .item-table .total-row td {
-            height: 28px;
-            vertical-align: middle;
         }
 
         .right {
@@ -202,7 +178,6 @@
         .signature-block {
             width: 160px;
             text-align: center;
-            margin-top: 30px;
         }
 
         .signature-image {
@@ -211,7 +186,6 @@
             max-height: 42px;
             margin: 0 auto 4px;
             object-fit: contain;
-
         }
 
         .bill-no-box {
@@ -249,26 +223,26 @@
 
                 <table class="bill-info">
                     <tr>
-                        <td width="68%"><b>નામ :</b> {{ vendor_name }}</td>
-                        <td width="14%"><b>બિલ નં :</b></td>
-                        <td width="18%">
+                        <td width="55%"><b>નામ :</b> {{ vendor_name }}</td>
+                        <td width="20%"><b>બિલ નં :</b></td>
+                        <td width="25%" class="center">
                             <div class="bill-no-box">{{ bill_no }}</div>
                         </td>
                     </tr>
                     <tr>
                         <td><b>સરનામું :</b> {{ address }}</td>
                         <td><b>તારીખ :</b></td>
-                        <td>{{ from_date }} થી {{ to_date }}</td>
+                        <td class="center">{{ from_date }} થી {{ to_date }}</td>
                     </tr>
                 </table>
-                <br>
+
                 <table class="item-table">
                     <thead>
                         <tr>
-                            <th width="5%">ક્રમ</th>
-                            <th width="44%">વિગત</th>
+                            <th width="6%">ક્રમ</th>
+                            <th width="40%">વિગત</th>
                             <th width="15%">ચાલન નંબર</th>
-                            <th width="5%">નંગ</th>
+                            <th width="8%">નંગ</th>
                             <th width="13%">ભાવ</th>
                             <th width="18%">રકમ (₹)</th>
                         </tr>
@@ -296,8 +270,8 @@
 
                 <div class="footer">
                     <div class="footer-left">
-                        <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
-                        <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '' }}</div>
+                        <div>પાન નંબર: {{ engineering_pan_number or '—' }}</div>
+                        <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '—' }}</div>
                         <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
                     </div>
                     <div class="signature-block">
@@ -305,7 +279,7 @@
                         <img class="signature-image" src="{{ engineering_sign_image }}" alt="Signature" />
                         {% endif %}
                         _____________________<br>
-                        {{ engineering_name or "કાનાણી" }}એન્જિનિયરિંગ વર્ક્સ
+                        {{ engineering_name or "કાનાણી એન્જિનિયરિંગ વર્ક્સ" }}
                     </div>
                 </div>
             </div>
