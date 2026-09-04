@@ -3,11 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>Bill PDF</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
     <style>
+        /* ============================================================
+           FIX #1 — GUJARATI TEXT GARBLING
+           Your <link> to Google Fonts is not reliable inside WeasyPrint
+           (no JS, and the font fetch at render-time can silently fail
+           or fall back to a font with no Gujarati glyphs — which is
+           exactly what produced the garbled characters in your PDF).
+           Solution: embed the font file locally with @font-face and
+           point WeasyPrint's base_url at the folder containing it.
+
+           1. Download the font once and keep it with your project, e.g.:
+              app/static/fonts/NotoSansGujarati-Regular.ttf
+              app/static/fonts/NotoSansGujarati-Bold.ttf
+              (Get them from https://fonts.google.com/noto/specimen/Noto+Sans+Gujarati
+               -> "Download family", or from the Google Fonts GitHub repo.)
+
+           2. When calling WeasyPrint, pass base_url so relative paths
+              below resolve correctly:
+
+                 from weasyprint import HTML
+                 HTML(string=html_content, base_url="app/static/").write_pdf(...)
+
+              then reference the font as "fonts/NotoSansGujarati-Regular.ttf"
+              (or use an absolute file:// path / base64 data URI if you
+              prefer not to depend on base_url).
+           ============================================================ */
+        @font-face {
+            font-family: "Noto Sans Gujarati";
+            src: url("fonts/NotoSansGujarati-Regular.ttf") format("truetype");
+            font-weight: 400 600;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "Noto Sans Gujarati";
+            src: url("fonts/NotoSansGujarati-Bold.ttf") format("truetype");
+            font-weight: 700 800;
+            font-style: normal;
+        }
+
         @page {
             size: A4 portrait;
             margin: 0;
@@ -17,11 +51,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Noto Sans Gujarati", Arial, sans-serif;
+            font-family: "Noto Sans Gujarati", sans-serif;
         }
 
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             background: #fff;
@@ -34,16 +67,23 @@
             align-items: flex-start;
         }
 
+        /* ============================================================
+           FIX #3 — FIXED A4 / SINGLE-PAGE LAYOUT + PINNED FOOTER
+           Explicit height budget (297mm page minus top/bottom padding)
+           instead of relying on flexbox "min-height: 297mm" alone,
+           which is what let the footer drift / not pin reliably.
+           ============================================================ */
         .page {
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm;
             padding: 18mm 16mm 14mm;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
         .bill {
             width: 100%;
-            min-height: 250mm;
+            height: 100%;
             background: white;
             border: 2px solid #d92d2d;
             padding: 1.5mm;
@@ -57,6 +97,7 @@
             display: flex;
             flex-direction: column;
             flex: 1;
+            height: 100%;
         }
 
         .top-contact {
@@ -69,9 +110,7 @@
             margin-bottom: 4px;
         }
 
-        .center {
-            text-align: center;
-        }
+        .center { text-align: center; }
 
         .company {
             text-align: center;
@@ -108,8 +147,7 @@
             table-layout: fixed;
         }
 
-        td,
-        th {
+        td, th {
             border: 1px solid #d92d2d;
             padding: 5px;
             font-size: 12px;
@@ -124,19 +162,6 @@
             height: 32px;
             overflow-wrap: anywhere;
             word-break: break-word;
-        }
-
-        .bill-info td:first-child {
-            width: 68%;
-        }
-
-        .bill-info td:nth-child(2) {
-            width: 14%;
-            white-space: nowrap;
-        }
-
-        .bill-info td:nth-child(3) {
-            width: 18%;
         }
 
         .item-table {
@@ -159,29 +184,23 @@
             word-wrap: break-word;
         }
 
-        .item-table .table-spacer {
-            height: 100%;
-        }
-
-        .item-table .table-spacer td {
-            height: 100%;
-            padding: 0;
-        }
+        .item-table .table-spacer { height: 100%; }
+        .item-table .table-spacer td { height: 100%; padding: 0; }
 
         .item-table .total-row td {
             height: 28px;
             vertical-align: middle;
         }
 
-        .right {
-            text-align: right;
-        }
+        .right { text-align: right; }
 
         .total {
             font-weight: bold;
             font-size: 14px;
         }
 
+        /* ---- footer pinned to bottom, no longer relying on flex
+               guesswork inside a min-height container ---- */
         .footer {
             display: flex;
             justify-content: space-between;
@@ -201,17 +220,25 @@
 
         .signature-block {
             width: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
-            margin-top: 30px;
         }
 
         .signature-image {
             display: block;
             max-width: 120px;
             max-height: 42px;
-            margin: 0 auto 4px;
+            margin-bottom: 4px;
             object-fit: contain;
+        }
 
+        .signature-line {
+            width: 100%;
+            border-top: 1px solid #1f1f1f;
+            margin-top: 26px;
+            padding-top: 4px;
         }
 
         .bill-no-box {
@@ -248,12 +275,15 @@
                 </div>
 
                 <table class="bill-info">
+                    <colgroup>
+                        <col style="width:68%">
+                        <col style="width:14%">
+                        <col style="width:18%">
+                    </colgroup>
                     <tr>
-                        <td width="68%"><b>નામ :</b> {{ vendor_name }}</td>
-                        <td width="14%"><b>બિલ નં :</b></td>
-                        <td width="18%">
-                            <div class="bill-no-box">{{ bill_no }}</div>
-                        </td>
+                        <td><b>નામ :</b> {{ vendor_name }}</td>
+                        <td><b>બિલ નં :</b></td>
+                        <td><div class="bill-no-box">{{ bill_no }}</div></td>
                     </tr>
                     <tr>
                         <td><b>સરનામું :</b> {{ address }}</td>
@@ -262,15 +292,27 @@
                     </tr>
                 </table>
                 <br>
+
+                <!-- FIX #2 — column widths via <colgroup>/<col> instead of
+                     width="" on <th>, which WeasyPrint doesn't reliably
+                     honor with table-layout: fixed. -->
                 <table class="item-table">
+                    <colgroup>
+                        <col style="width:5%">
+                        <col style="width:44%">
+                        <col style="width:15%">
+                        <col style="width:5%">
+                        <col style="width:13%">
+                        <col style="width:18%">
+                    </colgroup>
                     <thead>
                         <tr>
-                            <th width="5%">ક્રમ</th>
-                            <th width="44%">વિગત</th>
-                            <th width="15%">ચાલન નંબર</th>
-                            <th width="5%">નંગ</th>
-                            <th width="13%">ભાવ</th>
-                            <th width="18%">રકમ (₹)</th>
+                            <th>ક્રમ</th>
+                            <th>વિગત</th>
+                            <th>ચાલન નંબર</th>
+                            <th>નંગ</th>
+                            <th>ભાવ</th>
+                            <th>રકમ (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -304,8 +346,9 @@
                         {% if engineering_sign_image %}
                         <img class="signature-image" src="{{ engineering_sign_image }}" alt="Signature" />
                         {% endif %}
-                        _____________________<br>
-                        {{ engineering_name or "કાનાણી" }}એન્જિનિયરિંગ વર્ક્સ
+                        <div class="signature-line">
+                            {{ engineering_name or "કાનાણી" }} એન્જિનિયરિંગ વર્ક્સ
+                        </div>
                     </div>
                 </div>
             </div>
