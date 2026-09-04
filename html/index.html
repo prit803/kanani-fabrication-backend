@@ -42,7 +42,8 @@
             font-family: "Noto Sans Gujarati", sans-serif;
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             background: #fff;
@@ -64,7 +65,7 @@
         .page {
             width: 210mm;
             height: 297mm;
-            padding: 18mm 16mm 6mm;
+            padding: 18mm 16mm 14mm;
             box-sizing: border-box;
             overflow: hidden;
         }
@@ -98,7 +99,9 @@
             margin-bottom: 4px;
         }
 
-        .center { text-align: center; }
+        .center {
+            text-align: center;
+        }
 
         .company {
             text-align: center;
@@ -135,7 +138,8 @@
             table-layout: fixed;
         }
 
-        td, th {
+        td,
+        th {
             border: 1px solid #d92d2d;
             padding: 5px;
             font-size: 12px;
@@ -172,15 +176,23 @@
             word-wrap: break-word;
         }
 
-        .item-table .table-spacer { height: 100%; }
-        .item-table .table-spacer td { height: 100%; padding: 0; }
+        .item-table .table-spacer {
+            height: 100%;
+        }
+
+        .item-table .table-spacer td {
+            height: 100%;
+            padding: 0;
+        }
 
         .item-table .total-row td {
             height: 28px;
             vertical-align: middle;
         }
 
-        .right { text-align: right; }
+        .right {
+            text-align: right;
+        }
 
         .total {
             font-weight: bold;
@@ -197,7 +209,7 @@
             padding-top: 12px;
             font-size: 11px;
             color: #333;
-            margin-top: 40px;
+            margin-top: 50px;
         }
 
         .footer-left {
@@ -271,7 +283,9 @@
                     <tr>
                         <td><b>નામ :</b> {{ vendor_name }}</td>
                         <td><b>બિલ નં :</b></td>
-                        <td><div class="bill-no-box">{{ bill_no }}</div></td>
+                        <td>
+                            <div class="bill-no-box">{{ bill_no }}</div>
+                        </td>
                     </tr>
                     <tr>
                         <td><b>સરનામું :</b> {{ address }}</td>
