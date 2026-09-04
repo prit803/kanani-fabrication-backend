@@ -1,0 +1,38 @@
+name: Deploy FastAPI to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            cd /home/ubuntu/kanani-fabrication-backend
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Restarting FastAPI service..."
+            sudo systemctl restart kanani.service
+
+            echo "Restarting Nginx..."
+            sudo systemctl restart nginx
+
+            echo "Checking FastAPI service..."
+            sudo systemctl is-active --quiet kanani.service
+
+            echo "Checking Nginx..."
+            sudo systemctl is-active --quiet nginx
+
+            echo "Deployment successful!"
