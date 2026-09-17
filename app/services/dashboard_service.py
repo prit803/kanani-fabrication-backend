@@ -45,8 +45,7 @@ class DashboardService:
                 .join(Vendor, Vendor.vendor_id == Bill.vendor_id)
                 .outerjoin(
                     BillItem,
-                    (BillItem.bill_id == Bill.bill_id)
-                    & BillItem.is_deleted.is_(False),
+                    (BillItem.bill_id == Bill.bill_id) & BillItem.is_deleted.is_(False),
                 )
                 .filter(*bill_filters)
                 .group_by(Bill.status)
@@ -60,14 +59,10 @@ class DashboardService:
             paid_amount = amounts_by_status.get("paid", 0.0)
 
             total_vendors = (
-                db.query(Vendor)
-                .filter(Vendor.is_deleted.is_(False))
-                .count()
+                db.query(Vendor).filter(Vendor.is_deleted.is_(False)).count()
             )
             total_engineers = (
-                db.query(Engineering)
-                .filter(Engineering.is_deleted.is_(False))
-                .count()
+                db.query(Engineering).filter(Engineering.is_deleted.is_(False)).count()
             )
 
             month_expression = func.strftime("%Y-%m", Bill.bill_date)
@@ -80,8 +75,7 @@ class DashboardService:
                 .join(Vendor, Vendor.vendor_id == Bill.vendor_id)
                 .outerjoin(
                     BillItem,
-                    (BillItem.bill_id == Bill.bill_id)
-                    & BillItem.is_deleted.is_(False),
+                    (BillItem.bill_id == Bill.bill_id) & BillItem.is_deleted.is_(False),
                 )
                 .filter(*bill_filters)
                 .group_by(month_expression)
@@ -99,8 +93,7 @@ class DashboardService:
                 .join(Bill, Bill.vendor_id == Vendor.vendor_id)
                 .outerjoin(
                     BillItem,
-                    (BillItem.bill_id == Bill.bill_id)
-                    & BillItem.is_deleted.is_(False),
+                    (BillItem.bill_id == Bill.bill_id) & BillItem.is_deleted.is_(False),
                 )
                 .filter(*bill_filters)
                 .group_by(Vendor.vendor_id, Vendor.vendor_name)
