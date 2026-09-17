@@ -42,12 +42,11 @@
             font-family: "Noto Sans Gujarati", sans-serif;
         }
 
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             background: #fff;
-            color: #1f1f1f;
+            color: black;
         }
 
         body {
@@ -64,44 +63,41 @@
            ============================================================ */
         .page {
             width: 210mm;
-            height: 297mm;
-            padding: 18mm 16mm 14mm;
+            min-height: 297mm;
+            padding: 18mm 16mm 6mm;
             box-sizing: border-box;
-            overflow: hidden;
         }
 
         .bill {
             width: 100%;
-            height: 100%;
+            min-height: 100%;
             background: white;
-            border: 2px solid #d92d2d;
+            border: 2px solid black;
             padding: 1.5mm;
             display: flex;
             flex-direction: column;
         }
 
         .bill-inner {
-            border: 1px solid #d92d2d;
+            border: 1px solid black;
             padding: 2.5mm;
             display: flex;
             flex-direction: column;
             flex: 1;
-            height: 100%;
+            min-height: 100%;
         }
 
         .top-contact {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #d92d2d;
+            color: black;
             font-size: 12px;
             font-weight: bold;
             margin-bottom: 4px;
         }
 
-        .center {
-            text-align: center;
-        }
+        .center { text-align: center; }
 
         .company {
             text-align: center;
@@ -109,21 +105,21 @@
         }
 
         .company h1 {
-            color: #d92d2d;
+            color: black;
             font-size: 26px;
             font-weight: 800;
             letter-spacing: 0.5px;
         }
 
         .company-description {
-            color: #d92d2d;
+            color: black;
             font-size: 12px;
             line-height: 1.5;
             margin-top: 3px;
         }
 
         .address-strip {
-            background: #d92d2d;
+            background: black;
             color: #fff;
             font-size: 12px;
             font-weight: 600;
@@ -138,9 +134,8 @@
             table-layout: fixed;
         }
 
-        td,
-        th {
-            border: 1px solid #d92d2d;
+        td, th {
+            border: 1px solid black;
             padding: 5px;
             font-size: 12px;
         }
@@ -157,13 +152,13 @@
         }
 
         .item-table {
-            height: 90mm;
+            min-height: 90mm;
         }
 
         .item-table thead th {
             height: 16px;
-            background: #fff5f5;
-            color: #d92d2d;
+            background: white;
+            color: black;
             font-size: 12px;
             font-weight: 700;
             line-height: 1.2;
@@ -176,23 +171,15 @@
             word-wrap: break-word;
         }
 
-        .item-table .table-spacer {
-            height: 100%;
-        }
-
-        .item-table .table-spacer td {
-            height: 100%;
-            padding: 0;
-        }
+        .item-table .table-spacer { height: 100%; }
+        .item-table .table-spacer td { height: 100%; padding: 0; }
 
         .item-table .total-row td {
             height: 28px;
             vertical-align: middle;
         }
 
-        .right {
-            text-align: right;
-        }
+        .right { text-align: right; }
 
         .total {
             font-weight: bold;
@@ -209,17 +196,19 @@
             padding-top: 12px;
             font-size: 11px;
             color: #333;
-            margin-top: 50px;
+            margin-top: 40px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .footer-left {
             flex: 1;
             line-height: 1.8;
-            color: #1f1f1f;
+            color: black;
         }
 
         .signature-block {
-            width: 160px;
+            width: 220px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -228,27 +217,27 @@
 
         .signature-image {
             display: block;
-            max-width: 120px;
-            max-height: 42px;
+            max-width: 170px;
+            max-height: 64px;
             margin-bottom: 4px;
             object-fit: contain;
         }
 
         .signature-line {
             width: 100%;
-            border-top: 1px solid #1f1f1f;
+            border-top: 1px solid black;
             margin-top: 26px;
             padding-top: 4px;
         }
 
         .bill-no-box {
             display: inline-block;
-            border: 1px solid #d92d2d;
+            border: 1px solid black;
             min-width: 50px;
             padding: 4px 6px;
             text-align: center;
             font-weight: bold;
-            color: #d92d2d;
+            color: black;
         }
     </style>
 </head>
@@ -283,9 +272,7 @@
                     <tr>
                         <td><b>નામ :</b> {{ vendor_name }}</td>
                         <td><b>બિલ નં :</b></td>
-                        <td>
-                            <div class="bill-no-box">{{ bill_no }}</div>
-                        </td>
+                        <td><div class="bill-no-box">{{ bill_no }}</div></td>
                     </tr>
                     <tr>
                         <td><b>સરનામું :</b> {{ address }}</td>
@@ -331,7 +318,7 @@
                         <tr class="table-spacer">
                             <td colspan="6"></td>
                         </tr>
-                        <tr class="total-row">
+                        <tr class="total-row"> 
                             <td colspan="5" class="right total">કુલ</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
