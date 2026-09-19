@@ -8,6 +8,7 @@ sqlalchemy
 uvicorn
 WeasyPrint
 Jinja2
+deep-translator
 fastapi
 pydantic
 pymysql

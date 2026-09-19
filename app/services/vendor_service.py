@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import UploadFile
+from deep_translator import GoogleTranslator
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
@@ -14,6 +15,21 @@ logger = get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parents[2]
 VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
 VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
+
+
+def _translate_to_gujarati(value: str | None) -> str | None:
+    if not value:
+        return None
+
+    value = value.strip()
+    if not value or any("\u0a80" <= character <= "\u0aff" for character in value):
+        return value or None
+
+    try:
+        return GoogleTranslator(source="auto", target="gu").translate(value)
+    except Exception:
+        logger.exception("Failed to translate vendor text to Gujarati.")
+        return value
 
 
 class VendorService:
@@ -125,9 +141,8 @@ class VendorService:
 
             vendor.vendor_name = vendor_name.strip()
             vendor.mobile_number = mobile_number.strip()
-            vendor.shop_name = shop_name.strip() if shop_name else None
-
-            vendor.address = address.strip() if address else None
+            vendor.shop_name = _translate_to_gujarati(shop_name)
+            vendor.address = _translate_to_gujarati(address)
 
             if photo_file and photo_file.filename:
 
