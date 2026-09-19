@@ -281,15 +281,8 @@ class BillService:
         vendor_id: int,
         from_date: date,
         to_date: date,
-        engineer_id: int | None = None,
     ):
         try:
-
-            if engineer_id not in (None, 0, 1):
-                return ApiResponse.error(
-                    error_message="Engineer ID must be 0 for કાનાણી or 1 for કુમાર.",
-                    status_code=400,
-                )
 
             vendor = (
                 db.query(Vendor)
@@ -313,42 +306,29 @@ class BillService:
                 .order_by(Bill.bill_date.asc(), Bill.bill_id.asc())
             )
 
-            if engineer_id is not None:
-                bills = bills.filter(Bill.engineer_id == engineer_id)
-
             bills = bills.all()
 
             engineer = None
-            if engineer_id is not None:
+            for bill in bills:
+                if bill.engineer_id not in (0, 1):
+                    continue
                 engineer = (
                     db.query(Engineering)
                     .filter(
-                        Engineering.engineer_id == engineer_id,
+                        Engineering.engineer_id == bill.engineer_id,
                         Engineering.is_deleted.is_(False),
                     )
                     .first()
                 )
-
-            if engineer is None:
-                for bill in bills:
-                    if bill.engineer_id is None:
-                        continue
-                    engineer = (
-                        db.query(Engineering)
-                        .filter(
-                            Engineering.engineer_id == bill.engineer_id,
-                            Engineering.is_deleted.is_(False),
-                        )
-                        .first()
-                    )
-                    if engineer is not None:
-                        break
+                if engineer is not None:
+                    break
 
             if engineer is None:
                 engineer = (
                     db.query(Engineering)
                     .filter(
-                        Engineering.name == "કાનાણી", Engineering.is_deleted.is_(False)
+                        Engineering.engineer_id == 0,
+                        Engineering.is_deleted.is_(False),
                     )
                     .first()
                 )
