@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import threading
+import time
 from pathlib import Path
 
 from jinja2 import Template
@@ -15,6 +16,30 @@ from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
+
+PDF_EXPIRY_SECONDS = 5 * 60
+
+
+def _delete_file(path: Path):
+    try:
+        if path.is_file():
+            path.unlink()
+            logger.info("Deleted expired bill PDF: %s", str(path))
+    except Exception:
+        logger.exception("Failed to delete bill PDF: %s", str(path))
+
+
+def _delete_expired_bill_pdfs(output_dir: Path):
+    expiry_time = time.time() - PDF_EXPIRY_SECONDS
+
+    for path in output_dir.glob("bill_*.pdf"):
+        try:
+            if path.stat().st_mtime <= expiry_time:
+                _delete_file(path)
+        except FileNotFoundError:
+            continue
+        except Exception:
+            logger.exception("Failed to inspect bill PDF: %s", str(path))
 
 
 class BillService:
@@ -427,7 +452,7 @@ class BillService:
 
             if not template_path.exists():
                 return ApiResponse.success(
-                    data={**api_pdf_data, "pdf_url": None, "expires_in_seconds": 3600},
+                    data={**api_pdf_data, "pdf_url": None, "expires_in_seconds": 0},
                     message="Bill PDF data fetched successfully. (template missing)",
                 )
 
@@ -436,6 +461,7 @@ class BillService:
 
             output_dir = project_root / "storage" / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
+            _delete_expired_bill_pdfs(output_dir)
 
             filename = (
                 f"bill_{vendor.vendor_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
@@ -459,21 +485,14 @@ class BillService:
                     message="Bill PDF data fetched successfully. PDF generation is unavailable on this system.",
                 )
 
-            def _delete_file(path: Path):
-                try:
-                    if path.exists():
-                        path.unlink()
-                except Exception:
-                    logger.exception("Failed to delete scheduled PDF: %s", str(path))
-
-            timer = threading.Timer(3600, _delete_file, args=(pdf_path,))
+            timer = threading.Timer(PDF_EXPIRY_SECONDS, _delete_file, args=(pdf_path,))
             timer.daemon = True
             timer.start()
 
             response_data = {
                 **api_pdf_data,
                 "pdf_url": pdf_url,
-                "expires_in_seconds": 3600,
+                "expires_in_seconds": PDF_EXPIRY_SECONDS,
             }
 
             return ApiResponse.success(
