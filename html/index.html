@@ -74,10 +74,12 @@
 
         .bill {
             width: 100%;
-            min-height: 100%;
+            height: 265mm;
+            min-height: 265mm;
             background: white;
             border: 2px solid black;
             padding: 1.5mm;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
         }
@@ -88,7 +90,8 @@
             display: flex;
             flex-direction: column;
             flex: 1;
-            min-height: 100%;
+            min-height: 0;
+            box-sizing: border-box;
         }
 
         .top-contact {
@@ -353,7 +356,6 @@
                     </tbody>
                 </table>
 
-                {% if loop.last %}
                 <div class="footer">
                     <div class="footer-left">
                         <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
@@ -369,7 +371,6 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
