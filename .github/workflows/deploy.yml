@@ -23,6 +23,11 @@ jobs:
             echo "Pulling latest code..."
             git pull origin main
 
+            echo "Synchronizing Python environment..."
+            uv sync
+            source .venv/bin/activate
+            python --version
+
             echo "Restarting FastAPI service..."
             sudo systemctl restart kanani.service
 
