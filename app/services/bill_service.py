@@ -322,7 +322,7 @@ class BillService:
                 )
                 if engineer is not None:
                     break
-
+            print(f"Engineer found: {engineer.name if engineer else 'None'}")  # Debugging line
             if engineer is None:
                 engineer = (
                     db.query(Engineering)
