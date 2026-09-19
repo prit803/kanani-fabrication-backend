@@ -51,9 +51,7 @@
         }
 
         body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            display: block;
         }
 
         /* ============================================================
@@ -64,10 +62,13 @@
            ============================================================ */
         .page {
             width: 210mm;
+            min-width: 210mm;
+            max-width: 210mm;
             min-height: 297mm;
             padding: 18mm 16mm 14mm;
             box-sizing: border-box;
             overflow: visible;
+            flex: none;
             page-break-after: always;
         }
 
