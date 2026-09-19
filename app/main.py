@@ -38,11 +38,13 @@ def seed_default_engineers():
 
     db: Session = SessionLocal()
     try:
-        defaults = ["કાનાણી", "કુમાર"]
-        for name in defaults:
-            exists = db.query(Engineering).filter(Engineering.name == name).first()
-            if not exists:
-                db.add(Engineering(name=name))
+        defaults = {0: "કાનાણી", 1: "કુમાર"}
+        for engineer_id, name in defaults.items():
+            engineer = db.get(Engineering, engineer_id)
+            if engineer is None:
+                db.add(Engineering(engineer_id=engineer_id, name=name))
+            else:
+                engineer.name = name
         db.commit()
     finally:
         db.close()

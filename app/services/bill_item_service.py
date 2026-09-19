@@ -138,10 +138,6 @@ class BillItemService:
                 )
 
             engineer_id = getattr(request, "engineer_id", None)
-            print("$"*6)
-            print(engineer_id)
-            print("$"*6)
-            
 
             # Determine or create Bill.
             # IMPORTANT: for update requests, bill may be identified by item.bill_id
