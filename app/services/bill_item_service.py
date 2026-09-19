@@ -138,20 +138,10 @@ class BillItemService:
                 )
 
             engineer_id = getattr(request, "engineer_id", None)
-            if engineer_id is not None:
-                engineer = (
-                    db.query(Engineering)
-                    .filter(
-                        Engineering.engineer_id == engineer_id,
-                        Engineering.is_deleted.is_(False),
-                    )
-                    .first()
-                )
-                if engineer is None:
-                    return ApiResponse.error(
-                        error_message="Engineer ID must be 0 for કાનાણી or 1 for કુમાર.",
-                        status_code=400,
-                    )
+            print("$"*6)
+            print(engineer_id)
+            print("$"*6)
+            
 
             # Determine or create Bill.
             # IMPORTANT: for update requests, bill may be identified by item.bill_id
