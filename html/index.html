@@ -263,6 +263,8 @@
     </style>
 </head>
 <body>
+    {% for page_items in item_pages %}
+    {% set is_last_page = loop.last %}
     <div class="page">
         <div class="bill">
             <div class="bill-inner">
@@ -328,7 +330,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in items %}
+                        {% for item in page_items %}
                         <tr>
                             <td class="center">{{ item.sr_no }}</td>
                             <td>{{ item.description }}</td>
@@ -338,6 +340,7 @@
                             <td class="right">{{ item.amount }}</td>
                         </tr>
                         {% endfor %}
+                        {% if is_last_page %}
                         <tr class="table-spacer">
                             <td colspan="6"></td>
                         </tr>
@@ -345,9 +348,11 @@
                             <td colspan="5" class="right total">કુલ</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
+                        {% endif %}
                     </tbody>
                 </table>
 
+                {% if loop.last %}
                 <div class="footer">
                     <div class="footer-left">
                         <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
@@ -363,8 +368,10 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
+    {% endfor %}
 </body>
 </html>

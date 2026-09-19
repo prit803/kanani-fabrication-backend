@@ -18,6 +18,7 @@ from app.utils.response import ApiResponse
 logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
+PDF_ITEMS_PER_PAGE = 10
 
 
 def _delete_file(path: Path):
@@ -446,6 +447,10 @@ class BillService:
                 return value
 
             render_pdf_data = convert_render_numbers(pdf_data)
+            render_pdf_data["item_pages"] = [
+                render_pdf_data["items"][index : index + PDF_ITEMS_PER_PAGE]
+                for index in range(0, len(render_pdf_data["items"]), PDF_ITEMS_PER_PAGE)
+            ] or [[]]
             api_pdf_data = pdf_data
 
             template_path = project_root / "html" / "index.html"
