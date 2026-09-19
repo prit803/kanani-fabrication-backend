@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.bill_item_model import BillItem
 from app.models.bill_model import Bill
+from app.models.engineering_model import Engineering
 from app.models.vendor_model import Vendor
 from pathlib import Path
 from datetime import date
@@ -136,6 +137,22 @@ class BillItemService:
                     status_code=400,
                 )
 
+            engineer_id = getattr(request, "engineer_id", None)
+            if engineer_id is not None:
+                engineer = (
+                    db.query(Engineering)
+                    .filter(
+                        Engineering.engineer_id == engineer_id,
+                        Engineering.is_deleted.is_(False),
+                    )
+                    .first()
+                )
+                if engineer is None:
+                    return ApiResponse.error(
+                        error_message="Engineer ID must be 0 for કાનાણી or 1 for કુમાર.",
+                        status_code=400,
+                    )
+
             # Determine or create Bill.
             # IMPORTANT: for update requests, bill may be identified by item.bill_id
             # or by the existing bill_item_id, so we should not create a new bill
@@ -182,8 +199,8 @@ class BillItemService:
                         error_message="Bill not found.", status_code=404
                     )
 
-                if getattr(request, "engineer_id", None) is not None:
-                    bill.engineer_id = request.engineer_id
+                if engineer_id is not None:
+                    bill.engineer_id = engineer_id
 
             else:
                 # Create new bill - vendor must be provided and exist
@@ -209,7 +226,7 @@ class BillItemService:
 
                 bill = Bill()
                 bill.vendor_id = request.vendor_id
-                bill.engineer_id = getattr(request, "engineer_id", None)
+                bill.engineer_id = engineer_id
                 bill.bill_date = getattr(request, "bill_date", None) or date.today()
                 if getattr(request, "status", None):
                     bill.status = request.status

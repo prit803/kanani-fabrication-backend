@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import date
 
 from pydantic import BaseModel, Field
@@ -31,7 +31,7 @@ class CreateBillItemsRequest(BaseModel):
     # Either supply an existing bill_id or vendor_id to create a new bill
     bill_id: Optional[int] = None
     vendor_id: Optional[int] = None
-    engineer_id: Optional[int] = None
+    engineer_id: Optional[Literal[0, 1]] = None
     bill_date: Optional[date] = None
     status: Optional[str] = None
 
