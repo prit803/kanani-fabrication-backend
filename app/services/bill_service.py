@@ -285,6 +285,12 @@ class BillService:
     ):
         try:
 
+            if engineer_id not in (None, 0, 1):
+                return ApiResponse.error(
+                    error_message="Engineer ID must be 0 for કાનાણી or 1 for કુમાર.",
+                    status_code=400,
+                )
+
             vendor = (
                 db.query(Vendor)
                 .filter(Vendor.vendor_id == vendor_id, Vendor.is_deleted.is_(False))

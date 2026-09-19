@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import date
@@ -43,7 +45,7 @@ def get_bill_pdf_data(
     vendor_id: int,
     from_date: date,
     to_date: date,
-    engineer_id: int | None = None,
+    engineer_id: Literal[0, 1] | None = None,
     db: Session = Depends(get_db),
 ):
     return BillService.get_bill_pdf_data(
