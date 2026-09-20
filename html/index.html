@@ -349,7 +349,7 @@
                             <td colspan="6"></td>
                         </tr>
                         <tr class="total-row">
-                            <td colspan="5" class="right total">કુલ</td>
+                            <td colspan="5" class="right total">કુલ<br>{{ total_amount_words }} રૂપિયા માત્ર</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
                         {% endif %}
@@ -360,6 +360,8 @@
                     <div class="footer-left">
                         <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
                         <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '' }}</div>
+                        <div>IFSC કોડ: UTIB0001670</div>
+                        <br>
                         <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
                     </div>
                     <div class="signature-block">

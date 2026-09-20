@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 import threading
 import time
 from pathlib import Path
@@ -19,6 +20,140 @@ logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
 PDF_ITEMS_PER_PAGE = 10
+
+GUJARATI_NUMBER_WORDS = [
+    "શૂન્ય",
+    "એક",
+    "બે",
+    "ત્રણ",
+    "ચાર",
+    "પાંચ",
+    "છ",
+    "સાત",
+    "આઠ",
+    "નવ",
+    "દસ",
+    "અગિયાર",
+    "બાર",
+    "તેર",
+    "ચૌદ",
+    "પંદર",
+    "સોળ",
+    "સત્તર",
+    "અઢાર",
+    "ઓગણીસ",
+    "વીસ",
+    "એકવીસ",
+    "બાવીસ",
+    "તેવીસ",
+    "ચોવીસ",
+    "પચ્ચીસ",
+    "છવ્વીસ",
+    "સત્તાવીસ",
+    "અઠ્ઠાવીસ",
+    "ઓગણત્રીસ",
+    "ત્રીસ",
+    "એકત્રીસ",
+    "બત્રીસ",
+    "તેત્રીસ",
+    "ચોત્રીસ",
+    "પાંત્રીસ",
+    "છત્રીસ",
+    "સડત્રીસ",
+    "અડત્રીસ",
+    "ઓગણચાલીસ",
+    "ચાલીસ",
+    "એકતાલીસ",
+    "બેતાલીસ",
+    "ત્રેતાલીસ",
+    "ચુંમાલીસ",
+    "પિસ્તાલીસ",
+    "છેતાલીસ",
+    "સુડતાલીસ",
+    "અડતાલીસ",
+    "ઓગણપચાસ",
+    "પચાસ",
+    "એકાવન",
+    "બાવન",
+    "ત્રેપન",
+    "ચોપન",
+    "પંચાવન",
+    "છપ્પન",
+    "સત્તાવન",
+    "અઠ્ઠાવન",
+    "ઓગણસાઠ",
+    "સાઠ",
+    "એકસઠ",
+    "બાસઠ",
+    "ત્રેસઠ",
+    "ચોસઠ",
+    "પાંસઠ",
+    "છાસઠ",
+    "સડસઠ",
+    "અડસઠ",
+    "અગણોસિત્તેર",
+    "સિત્તેર",
+    "એકોતેર",
+    "બોતેર",
+    "તોતેર",
+    "ચુમોતેર",
+    "પંચોતેર",
+    "છોતેર",
+    "સિત્યોતેર",
+    "ઇઠ્યોતેર",
+    "નેવ્યોતેર",
+    "એંસી",
+    "એક્યાસી",
+    "બ્યાસી",
+    "ત્યાસી",
+    "ચોર્યાસી",
+    "પંચ્યાસી",
+    "છ્યાસી",
+    "સિત્યાસી",
+    "ઠ્યાસી",
+    "નેવ્યાસી",
+    "નેવું",
+    "એકાણું",
+    "બાણું",
+    "ત્રાણું",
+    "ચોરાણું",
+    "પંચાણું",
+    "છન્નું",
+    "સત્તાણું",
+    "અઠ્ઠાણું",
+    "નવ્વાણું",
+]
+
+
+def _gujarati_number_under_thousand(number: int) -> str:
+    words = []
+    hundreds, remainder = divmod(number, 100)
+    if hundreds:
+        words.extend([GUJARATI_NUMBER_WORDS[hundreds], "સો"])
+    if remainder:
+        words.append(GUJARATI_NUMBER_WORDS[remainder])
+    return " ".join(words)
+
+
+def amount_to_gujarati_words(amount: int | float | Decimal) -> str:
+    number = int(Decimal(str(amount)))
+    if number == 0:
+        return GUJARATI_NUMBER_WORDS[0]
+
+    parts = []
+    crore, number = divmod(number, 10_000_000)
+    lakh, number = divmod(number, 100_000)
+    thousand, remainder = divmod(number, 1_000)
+
+    if crore:
+        parts.extend([amount_to_gujarati_words(crore), "કરોડ"])
+    if lakh:
+        parts.extend([_gujarati_number_under_thousand(lakh), "લાખ"])
+    if thousand:
+        parts.extend([_gujarati_number_under_thousand(thousand), "હજાર"])
+    if remainder:
+        parts.append(_gujarati_number_under_thousand(remainder))
+    return " ".join(parts)
 
 
 def _delete_file(path: Path):
@@ -389,6 +524,7 @@ class BillService:
                 "to_date": to_date.strftime("%d/%m/%Y"),
                 "total_bill_count": len(bills),
                 "total_amount": format_number(total_amount),
+                "total_amount_words": amount_to_gujarati_words(total_amount),
                 "bill_no": bill_no,
                 "engineering_name": (
                     engineer.name if engineer else "કાનાણી એન્જિનિયરिंग વર્ક્સ"
