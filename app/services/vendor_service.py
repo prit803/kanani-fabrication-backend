@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import UploadFile
+from translate import Translator
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
@@ -14,6 +15,12 @@ logger = get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parents[2]
 VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
 VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
+
+
+def en_to_gu(text: str | None) -> str | None:
+    if not text:
+        return text
+    return Translator(from_lang="en", to_lang="gu").translate(text)
 
 
 class VendorService:
@@ -123,10 +130,10 @@ class VendorService:
 
             # Save Data
 
-            vendor.vendor_name = vendor_name.strip()
+            vendor.vendor_name = en_to_gu(vendor_name.strip())
             vendor.mobile_number = mobile_number.strip()
-            vendor.shop_name = shop_name.strip() if shop_name else None
-            vendor.address = address.strip() if address else None
+            vendor.shop_name = en_to_gu(shop_name.strip()) if shop_name else None
+            vendor.address = en_to_gu(address.strip()) if address else None
 
             if photo_file and photo_file.filename:
 
