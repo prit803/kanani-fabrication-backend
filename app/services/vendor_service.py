@@ -1,9 +1,10 @@
 from datetime import datetime
+import asyncio
 import shutil
 from pathlib import Path
 
 from fastapi import UploadFile
-from translate import Translator
+from googletrans import Translator
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
@@ -17,10 +18,16 @@ VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
 VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
+async def _translate_to_gu(text: str) -> str:
+    translator = Translator()
+    result = await translator.translate(text, src="en", dest="gu")
+    return result.text
+
+
 def en_to_gu(text: str | None) -> str | None:
     if not text:
         return text
-    return Translator(from_lang="en", to_lang="gu").translate(text)
+    return asyncio.run(_translate_to_gu(text))
 
 
 class VendorService:
