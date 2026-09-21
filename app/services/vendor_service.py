@@ -21,6 +21,7 @@ VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 async def _translate_to_gu(text: str) -> str:
     translator = Translator()
     result = await translator.translate(text, src="en", dest="gu")
+    print(f"Translated '{text}' to Gujarati: '{result.text}'")
     return result.text
 
 
