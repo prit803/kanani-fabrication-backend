@@ -1,10 +1,9 @@
 from datetime import datetime
-import asyncio
 import shutil
 from pathlib import Path
 
 from fastapi import UploadFile
-from googletrans import Translator
+import requests
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
@@ -18,17 +17,18 @@ VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
 VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
-async def _translate_to_gu(text: str) -> str:
-    translator = Translator()
-    result = await translator.translate(text, src="en", dest="gu")
-    print(f"Translated '{text}' to Gujarati: '{result.text}'")
-    return result.text
-
-
 def en_to_gu(text: str | None) -> str | None:
     if not text:
         return text
-    return asyncio.run(_translate_to_gu(text))
+
+    response = requests.post(
+        "https://translator.fastapicloud.dev/translate",
+        headers={"accept": "*/*"},
+        json={"text": text},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()["translated_text"]
 
 
 class VendorService:
