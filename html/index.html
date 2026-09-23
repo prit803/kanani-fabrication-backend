@@ -2,7 +2,7 @@
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
-    <title>Bill pdf</title>
+    <title>Bill PDF</title>
     <style>
         /* ============================================================
            FIX #1 — GUJARATI TEXT GARBLING / TOFU BOXES
@@ -51,7 +51,9 @@
         }
 
         body {
-            display: block;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
         /* ============================================================
@@ -62,24 +64,19 @@
            ============================================================ */
         .page {
             width: 210mm;
-            min-width: 210mm;
-            max-width: 210mm;
             min-height: 297mm;
             padding: 18mm 16mm 14mm;
             box-sizing: border-box;
             overflow: visible;
-            flex: none;
             page-break-after: always;
         }
 
         .bill {
             width: 100%;
-            height: 265mm;
-            min-height: 265mm;
+            min-height: 100%;
             background: white;
             border: 2px solid black;
             padding: 1.5mm;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
         }
@@ -90,8 +87,7 @@
             display: flex;
             flex-direction: column;
             flex: 1;
-            min-height: 0;
-            box-sizing: border-box;
+            min-height: 100%;
         }
 
         .top-contact {
@@ -162,7 +158,7 @@
         }
 
         .item-table {
-            height: 75mm;
+            height: 90mm;
             flex: 0 0 auto;
             page-break-inside: auto;
             break-inside: auto;
@@ -267,8 +263,6 @@
     </style>
 </head>
 <body>
-    {% for page_items in item_pages %}
-    {% set is_last_page = loop.last %}
     <div class="page">
         <div class="bill">
             <div class="bill-inner">
@@ -334,7 +328,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in page_items %}
+                        {% for item in items %}
                         <tr>
                             <td class="center">{{ item.sr_no }}</td>
                             <td>{{ item.description }}</td>
@@ -344,15 +338,13 @@
                             <td class="right">{{ item.amount }}</td>
                         </tr>
                         {% endfor %}
-                        {% if is_last_page %}
                         <tr class="table-spacer">
                             <td colspan="6"></td>
                         </tr>
                         <tr class="total-row">
-                            <td colspan="5" class="right total">કુલ<br>{{ total_amount_words }} રૂપિયા માત્ર</td>
+                            <td colspan="5" class="right total">કુલ</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
-                        {% endif %}
                     </tbody>
                 </table>
 
@@ -360,7 +352,6 @@
                     <div class="footer-left">
                         <div>પાન નંબર: {{ engineering_pan_number or '' }}</div>
                         <div>બેંક એકાઉન્ટ: {{ engineering_bank_account_number or '' }}</div>
-                        <div>IFSC કોડ: UTIB0001670</div>
                         <div>નોંધ : કૃપા કરીને રસીદ સાચવી રાખો</div>
                     </div>
                     <div class="signature-block">
@@ -375,6 +366,5 @@
             </div>
         </div>
     </div>
-    {% endfor %}
 </body>
 </html>
