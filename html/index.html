@@ -92,6 +92,8 @@
             flex: 1;
             min-height: 0;
             box-sizing: border-box;
+            position: relative;
+            padding-bottom: 38mm;
         }
 
         .top-contact {
@@ -162,8 +164,9 @@
         }
 
         .item-table {
+            min-height: 90mm;
             height: 90mm;
-            flex: 0 0 auto;
+            flex: 0 0 90mm;
             page-break-inside: auto;
             break-inside: auto;
         }
@@ -218,11 +221,12 @@
             justify-content: space-between;
             align-items: flex-end;
             gap: 12px;
-            flex: 0 0 auto;
-            padding-top: 12px;
+            position: absolute;
+            left: 2.5mm;
+            right: 2.5mm;
+            bottom: 2.5mm;
             font-size: 11px;
             color: black;
-            margin-top: auto;
             page-break-inside: avoid;
         }
 
