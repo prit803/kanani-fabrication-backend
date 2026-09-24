@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+import os
 import threading
 import time
 from pathlib import Path
@@ -19,7 +20,36 @@ from app.utils.response import ApiResponse
 logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
-PDF_ITEMS_PER_PAGE = 10
+PDF_ITEMS_PER_PAGE = 9
+
+
+def _configure_weasyprint_dlls():
+    if os.name != "nt" or not hasattr(os, "add_dll_directory"):
+        return
+
+    dll_directory = next(
+        (
+            path
+            for path in (
+                Path(r"C:\msys64\ucrt64\bin"),
+                Path(r"C:\msys64\mingw64\bin"),
+            )
+            if path.is_dir()
+        ),
+        None,
+    )
+    if dll_directory is None:
+        return
+
+    os.environ["WEASYPRINT_DLL_DIRECTORIES"] = str(dll_directory)
+    os.add_dll_directory(str(dll_directory))
+
+    os.environ["PATH"] = ";".join(
+        path
+        for path in os.environ.get("PATH", "").split(";")
+        if "Tesseract-OCR" not in path
+    )
+
 
 GUJARATI_NUMBER_WORDS = [
     "શૂન્ય",
@@ -596,14 +626,15 @@ class BillService:
             pdf_url = f"/storage/output/{filename}"
 
             try:
+                _configure_weasyprint_dlls()
                 from weasyprint import HTML
 
                 HTML(string=rendered_html, base_url=str(project_root)).write_pdf(
                     target=str(pdf_path)
                 )
             except Exception as exc:
-                logger.warning(
-                    "PDF generation unavailable on this system; skipping file creation. %s",
+                logger.exception(
+                    "PDF generation unavailable on this system; skipping file creation: %s",
                     str(exc),
                 )
                 return ApiResponse.success(

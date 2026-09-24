@@ -62,14 +62,16 @@
            ============================================================ */
         .page {
             width: 210mm;
+            height: 297mm;
             min-width: 210mm;
             max-width: 210mm;
             min-height: 297mm;
             padding: 18mm 16mm 14mm;
             box-sizing: border-box;
-            overflow: visible;
-            flex: none;
+            overflow: hidden;
             page-break-after: always;
+            break-after: page;
+            position: relative;
         }
 
         .bill {
@@ -92,8 +94,9 @@
             flex: 1;
             min-height: 0;
             box-sizing: border-box;
+            height: 100%;
             position: relative;
-            padding-bottom: 38mm;
+            overflow: hidden;
         }
 
         .top-contact {
@@ -163,12 +166,34 @@
             word-break: break-word;
         }
 
+        .item-table-frame {
+            height: 145mm;
+            min-height: 145mm;
+            flex: 0 0 145mm;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid black;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
         .item-table {
-            min-height: 90mm;
-            height: 90mm;
-            flex: 0 0 90mm;
-            page-break-inside: auto;
-            break-inside: auto;
+            height: auto;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            border: 0;
+        }
+
+        .item-table tr> :first-child {
+            border-left: 0;
+        }
+
+        .item-table tr> :last-child {
+            border-right: 0;
+        }
+
+        .item-table thead tr:first-child>* {
+            border-top: 0;
         }
 
         .item-table thead th {
@@ -191,16 +216,35 @@
             word-wrap: break-word;
         }
 
-        .item-table .table-spacer {
-            height: auto;
+        .item-total-table {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            margin: 0;
         }
 
-        .item-table .table-spacer td {
-            height: auto;
-            padding: 0;
+        .item-total-table tr> :first-child {
+            border-left: 0;
         }
 
-        .item-table .total-row td {
+        .item-total-table tr> :last-child {
+            border-right: 0;
+            border-bottom: 0;
+        }
+
+        .item-total-table td {
+            border-top: 1px solid black;
+            border-bottom: 0;
+        }
+
+        .item-total-table td:last-child {
+            border-right: 0 !important;
+            border-bottom: 0 !important;
+        }
+
+        .item-total-table td {
             height: 28px;
             vertical-align: middle;
         }
@@ -228,6 +272,7 @@
             font-size: 11px;
             color: black;
             page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .footer-left {
@@ -318,47 +363,52 @@
                 <!-- FIX #2 — column widths via <colgroup>/<col> instead of
                      width="" on <th>, which WeasyPrint doesn't reliably
                      honor with table-layout: fixed. -->
-                <table class="item-table">
-                    <colgroup>
-                        <col style="width:5%">
-                        <col style="width:44%">
-                        <col style="width:15%">
-                        <col style="width:5%">
-                        <col style="width:13%">
-                        <col style="width:18%">
-                    </colgroup>
-                    <thead>
+                <div class="item-table-frame">
+                    <table class="item-table">
+                        <colgroup>
+                            <col style="width:5%">
+                            <col style="width:44%">
+                            <col style="width:15%">
+                            <col style="width:5%">
+                            <col style="width:13%">
+                            <col style="width:18%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>ક્રમ</th>
+                                <th>વિગત</th>
+                                <th>તારીખ</th>
+                                <th>નંગ</th>
+                                <th>ભાવ</th>
+                                <th>રકમ (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in page_items %}
+                            <tr>
+                                <td class="center">{{ item.sr_no }}</td>
+                                <td>{{ item.description }}</td>
+                                <td class="center">{{ item.bill_date }}</td>
+                                <td class="center">{{ item.quantity }}</td>
+                                <td class="right">{{ item.rate }}</td>
+                                <td class="right">{{ item.amount }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if is_last_page %}
+                    <table class="item-total-table">
+                        <colgroup>
+                            <col style="width:82%">
+                            <col style="width:18%">
+                        </colgroup>
                         <tr>
-                            <th>ક્રમ</th>
-                            <th>વિગત</th>
-                            <th>ચાલન નંબર</th>
-                            <th>નંગ</th>
-                            <th>ભાવ</th>
-                            <th>રકમ (₹)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in page_items %}
-                        <tr>
-                            <td class="center">{{ item.sr_no }}</td>
-                            <td>{{ item.description }}</td>
-                            <td class="center">{{ item.bill_date }}</td>
-                            <td class="center">{{ item.quantity }}</td>
-                            <td class="right">{{ item.rate }}</td>
-                            <td class="right">{{ item.amount }}</td>
-                        </tr>
-                        {% endfor %}
-                        {% if is_last_page %}
-                        <tr class="table-spacer">
-                            <td colspan="6"></td>
-                        </tr>
-                        <tr class="total-row">
-                            <td colspan="5" class="right total">કુલ<br>{{ total_amount_words }} રૂપિયા માત્ર</td>
+                            <td class="right total">કુલ<br>{{ total_amount_words }} રૂપિયા માત્ર</td>
                             <td class="right total">₹ {{ total_amount }}</td>
                         </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+                    </table>
+                    {% endif %}
+                </div>
 
                 <div class="footer">
                     <div class="footer-left">

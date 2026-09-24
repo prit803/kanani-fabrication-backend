@@ -53,216 +53,51 @@ VENDORS = [
         "address": "Makarpura GIDC, Vadodara, Gujarat",
         "status": "active",
     },
-    {
-        "vendor_id": 3,
-        "vendor_name": "Kiritbhai Parmar",
-        "mobile_number": "9723456789",
-        "shop_name": "Krishna Welding & Fabrication",
-        "address": "Sachin GIDC, Surat, Gujarat",
-        "status": "active",
-    },
-    {
-        "vendor_id": 4,
-        "vendor_name": "Bhaveshbhai Makwana",
-        "mobile_number": "9898765432",
-        "shop_name": "Umiya Steel Works",
-        "address": "Shapar-Veraval GIDC, Rajkot, Gujarat",
-        "status": "active",
-    },
-    {
-        "vendor_id": 5,
-        "vendor_name": "Hasmukhbhai Rabari",
-        "mobile_number": "9925234567",
-        "shop_name": "Ganesh Fabrication",
-        "address": "Kathwada GIDC, Ahmedabad, Gujarat",
-        "status": "active",
-    },
-    {
-        "vendor_id": 6,
-        "vendor_name": "Dineshbhai Vaghela",
-        "mobile_number": "9898123456",
-        "shop_name": "Mahalaxmi Steel Fabricators",
-        "address": "Odhav, Ahmedabad, Gujarat",
-        "status": "inactive",
-    },
-    {
-        "vendor_id": 7,
-        "vendor_name": "Pravinbhai Gohil",
-        "mobile_number": "9978901234",
-        "shop_name": "Shiv Shakti Engineering Works",
-        "address": "Halol GIDC, Panchmahal, Gujarat",
-        "status": "active",
-    },
-    {
-        "vendor_id": 8,
-        "vendor_name": "Mukeshbhai Prajapati",
-        "mobile_number": "9824321098",
-        "shop_name": "Patel Metal Works",
-        "address": "Ankleshwar GIDC, Bharuch, Gujarat",
-        "status": "active",
-    },
-    {
-        "vendor_id": 9,
-        "vendor_name": "Alpeshbhai Thakor",
-        "mobile_number": "9712345678",
-        "shop_name": "Ambica Fabrication",
-        "address": "Changodar GIDC, Ahmedabad, Gujarat",
-        "status": "active",
-    },
 ]
 
 BILLS = [
     {
         "bill_id": 0,
-        "vendor_id": 6,
+        "vendor_id": 0,
         "bill_date": "2026-08-07",
         "status": "pending",
         "engineer_id": 0,
     },
     {
         "bill_id": 1,
-        "vendor_id": 3,
+        "vendor_id": 1,
         "bill_date": "2026-08-07",
         "status": "pending",
         "engineer_id": 0,
     },
     {
         "bill_id": 2,
-        "vendor_id": 5,
-        "bill_date": "2026-08-07",
-        "status": "pending",
-        "engineer_id": 0,
-    },
-    {
-        "bill_id": 3,
-        "vendor_id": 4,
-        "bill_date": "2026-08-07",
-        "status": "pending",
-        "engineer_id": 0,
-    },
-    {
-        "bill_id": 4,
         "vendor_id": 2,
-        "bill_date": "2026-08-07",
-        "status": "pending",
-        "engineer_id": 0,
-    },
-    {
-        "bill_id": 5,
-        "vendor_id": 1,
         "bill_date": "2026-08-07",
         "status": "pending",
         "engineer_id": 0,
     },
 ]
 
-BILL_ITEMS = [
-    {
-        "bill_id": 0,
-        "item_description": "એમએસ એંગલ 50x50 - 120 કિલો",
-        "quantity": 120,
-        "rate": 78.5,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 0,
-        "item_description": "વેલ્ડિંગ કામ",
-        "quantity": 1,
-        "rate": 2500,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 0,
-        "item_description": "ગ્રાઇન્ડિંગ અને ફિનિશિંગ",
-        "quantity": 1,
-        "rate": 1200,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 1,
-        "item_description": "એમએસ પાઇપ 2 ઇંચ",
-        "quantity": 35,
-        "rate": 520,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 1,
-        "item_description": "ગેસ કટિંગ ચાર્જ",
-        "quantity": 1,
-        "rate": 1800,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 2,
-        "item_description": "એમએસ ચેનલ 100x50",
-        "quantity": 18,
-        "rate": 980,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 2,
-        "item_description": "વેલ્ડિંગ રોડ",
-        "quantity": 8,
-        "rate": 450,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 2,
-        "item_description": "મજૂરી ચાર્જ",
-        "quantity": 1,
-        "rate": 3500,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 3,
-        "item_description": "સ્ટેનલેસ સ્ટીલ શીટ 2 મીમી",
-        "quantity": 10,
-        "rate": 3200,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 3,
-        "item_description": "ટીઆઈજી વેલ્ડિંગ",
-        "quantity": 1,
-        "rate": 4200,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 4,
-        "item_description": "એમએસ ફ્લેટ 40x6",
-        "quantity": 250,
-        "rate": 72,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 4,
-        "item_description": "ગેટ બનાવવાનું કામ",
-        "quantity": 1,
-        "rate": 6500,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 4,
-        "item_description": "ઇન્સ્ટોલેશન ચાર્જ",
-        "quantity": 1,
-        "rate": 2500,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 5,
-        "item_description": "જીઆઈ પાઇપ 1.5 ઇંચ",
-        "quantity": 40,
-        "rate": 610,
-        "audio_file_url": "",
-    },
-    {
-        "bill_id": 5,
-        "item_description": "આર્ક વેલ્ડિંગ",
-        "quantity": 1,
-        "rate": 3200,
-        "audio_file_url": "",
-    },
-]
+
+def build_bill_items(bill_id, item_count, item_prefix):
+    return [
+        {
+            "bill_id": bill_id,
+            "item_description": f"{item_prefix} {item_number}",
+            "quantity": item_number,
+            "rate": 100 * item_number,
+            "audio_file_url": "",
+        }
+        for item_number in range(1, item_count + 1)
+    ]
+
+
+BILL_ITEMS = (
+    build_bill_items(0, 15, "એમએસ ફેબ્રિકેશન આઇટમ")
+    + build_bill_items(1, 9, "વેલ્ડિંગ અને કટિંગ આઇટમ")
+    + build_bill_items(2, 2, "મજૂરી આઇટમ")
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = PROJECT_ROOT / "kanani.db"
