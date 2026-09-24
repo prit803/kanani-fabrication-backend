@@ -20,7 +20,43 @@ from app.utils.response import ApiResponse
 logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
-PDF_ITEMS_PER_PAGE = 9
+ITEM_TABLE_HEIGHT_MM = 145
+ITEM_HEADER_HEIGHT_MM = 10
+ITEM_TOTAL_HEIGHT_MM = 14
+ITEM_ROW_BASE_HEIGHT_MM = 7
+ITEM_ROW_LINE_HEIGHT_MM = 5.5
+ITEM_DESCRIPTION_CHARS_PER_LINE = 28
+
+
+def _item_row_height_mm(item):
+    description = str(item.get("description") or "")
+    description_lines = max(
+        1,
+        (len(description) + ITEM_DESCRIPTION_CHARS_PER_LINE - 1)
+        // ITEM_DESCRIPTION_CHARS_PER_LINE,
+    )
+    return ITEM_ROW_BASE_HEIGHT_MM + ((description_lines - 1) * ITEM_ROW_LINE_HEIGHT_MM)
+
+
+def _split_items_by_row_height(items):
+    pages = []
+    current_page = []
+    current_height = ITEM_HEADER_HEIGHT_MM
+    page_limit = ITEM_TABLE_HEIGHT_MM - ITEM_TOTAL_HEIGHT_MM
+
+    for item in items:
+        row_height = _item_row_height_mm(item)
+        if current_page and current_height + row_height > page_limit:
+            pages.append(current_page)
+            current_page = []
+            current_height = ITEM_HEADER_HEIGHT_MM
+
+        current_page.append(item)
+        current_height += row_height
+
+    if current_page or not pages:
+        pages.append(current_page)
+    return pages
 
 
 def _configure_weasyprint_dlls():
@@ -598,10 +634,9 @@ class BillService:
                 return value
 
             render_pdf_data = convert_render_numbers(pdf_data)
-            render_pdf_data["item_pages"] = [
-                render_pdf_data["items"][index : index + PDF_ITEMS_PER_PAGE]
-                for index in range(0, len(render_pdf_data["items"]), PDF_ITEMS_PER_PAGE)
-            ] or [[]]
+            render_pdf_data["item_pages"] = _split_items_by_row_height(
+                render_pdf_data["items"]
+            )
             api_pdf_data = pdf_data
 
             template_path = project_root / "html" / "index.html"
