@@ -21,41 +21,120 @@ logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
 ITEM_TABLE_HEIGHT_MM = 145
-ITEM_HEADER_HEIGHT_MM = 10
-ITEM_TOTAL_HEIGHT_MM = 14
-ITEM_ROW_BASE_HEIGHT_MM = 7
-ITEM_ROW_LINE_HEIGHT_MM = 5.5
-ITEM_DESCRIPTION_CHARS_PER_LINE = 28
+CSS_PIXEL_TO_MM = 25.4 / 96
+ITEM_ROW_SAFETY_MM = 0.3
 
 
-def _item_row_height_mm(item):
-    description = str(item.get("description") or "")
-    description_lines = max(
-        1,
-        (len(description) + ITEM_DESCRIPTION_CHARS_PER_LINE - 1)
-        // ITEM_DESCRIPTION_CHARS_PER_LINE,
+def _measure_item_table_rows(document, item_count):
+    row_heights = [None] * item_count
+    header_height = 0
+    total_height = 0
+
+    def visit(box):
+        nonlocal header_height, total_height
+        element = getattr(box, "element", None)
+        if getattr(box, "element_tag", None) == "tr" and element is not None:
+            if element.get("data-item-header") == "true":
+                header_height = max(header_height, box.height)
+            elif element.get("data-total-row") == "true":
+                total_height = max(total_height, box.height)
+            else:
+                item_index = element.get("data-item-index")
+                if item_index is not None:
+                    row_index = int(item_index)
+                    if 0 <= row_index < item_count:
+                        height_mm = box.height * CSS_PIXEL_TO_MM
+                        current_height = row_heights[row_index] or 0
+                        row_heights[row_index] = max(current_height, height_mm)
+
+        for child in getattr(box, "children", ()):
+            visit(child)
+
+    for page in document.pages:
+        visit(page._page_box)
+
+    if (
+        header_height <= 0
+        or total_height <= 0
+        or any(height is None for height in row_heights)
+    ):
+        raise ValueError("Could not measure the bill item table layout.")
+
+    return (
+        row_heights,
+        header_height * CSS_PIXEL_TO_MM,
+        total_height * CSS_PIXEL_TO_MM,
     )
-    return ITEM_ROW_BASE_HEIGHT_MM + ((description_lines - 1) * ITEM_ROW_LINE_HEIGHT_MM)
 
 
-def _split_items_by_row_height(items):
+def _split_items_by_row_height(items, row_heights, header_height, total_height):
+    frame_border_mm = 2 * CSS_PIXEL_TO_MM
+    regular_capacity = ITEM_TABLE_HEIGHT_MM - frame_border_mm - header_height
+    final_capacity = regular_capacity - total_height
+    measured_items = [
+        (item, row_height + ITEM_ROW_SAFETY_MM)
+        for item, row_height in zip(items, row_heights)
+    ]
+    if not measured_items:
+        return [[]]
+
+    item_count = len(measured_items)
+    page_counts = [float("inf")] * (item_count + 1)
+    fill_costs = [float("inf")] * (item_count + 1)
+    next_breaks = [None] * item_count
+    page_counts[item_count] = 0
+    fill_costs[item_count] = 0
+
+    for start in range(item_count - 1, -1, -1):
+        used_height = 0
+        best_result = (float("inf"), float("inf"))
+
+        for end in range(start + 1, item_count + 1):
+            used_height += measured_items[end - 1][1]
+            is_final_page = end == item_count
+            capacity = final_capacity if is_final_page else regular_capacity
+
+            if used_height > capacity and end - start > 1:
+                if is_final_page:
+                    continue
+                break
+
+            underfill = (capacity - used_height) / capacity
+            result = (1 + page_counts[end], underfill**2 + fill_costs[end])
+            if result < best_result:
+                best_result = result
+                next_breaks[start] = end
+
+            if used_height > capacity:
+                break
+
+        page_counts[start], fill_costs[start] = best_result
+
     pages = []
-    current_page = []
-    current_height = ITEM_HEADER_HEIGHT_MM
-    page_limit = ITEM_TABLE_HEIGHT_MM - ITEM_TOTAL_HEIGHT_MM
+    start = 0
+    while start < item_count:
+        end = next_breaks[start]
+        if end is None:
+            raise ValueError("Could not split bill items within the table height.")
+        page_rows = measured_items[start:end]
+        is_final_page = end == item_count
+        capacity = final_capacity if is_final_page else regular_capacity
+        unused_height = max(
+            0, capacity - sum(row_height for _, row_height in page_rows)
+        )
+        extra_row_height = unused_height / len(page_rows)
+        pages.append(
+            [
+                {
+                    **item,
+                    "_print_row_height_px": (row_height + extra_row_height)
+                    / CSS_PIXEL_TO_MM,
+                }
+                for item, row_height in page_rows
+            ]
+        )
+        start = end
 
-    for item in items:
-        row_height = _item_row_height_mm(item)
-        if current_page and current_height + row_height > page_limit:
-            pages.append(current_page)
-            current_page = []
-            current_height = ITEM_HEADER_HEIGHT_MM
-
-        current_page.append(item)
-        current_height += row_height
-
-    if current_page or not pages:
-        pages.append(current_page)
     return pages
 
 
@@ -634,9 +713,6 @@ class BillService:
                 return value
 
             render_pdf_data = convert_render_numbers(pdf_data)
-            render_pdf_data["item_pages"] = _split_items_by_row_height(
-                render_pdf_data["items"]
-            )
             api_pdf_data = pdf_data
 
             template_path = project_root / "html" / "index.html"
@@ -664,8 +740,29 @@ class BillService:
                 _configure_weasyprint_dlls()
                 from weasyprint import HTML
 
+                template = Template(template_text)
+                measurement_data = {
+                    **render_pdf_data,
+                    "item_pages": [render_pdf_data["items"]],
+                }
+                measurement_html = template.render(**measurement_data)
+                measurement_document = HTML(
+                    string=measurement_html, base_url=str(project_root)
+                ).render(presentational_hints=True)
+                row_heights, header_height, total_height = _measure_item_table_rows(
+                    measurement_document, len(render_pdf_data["items"])
+                )
+                item_pages = _split_items_by_row_height(
+                    render_pdf_data["items"],
+                    row_heights,
+                    header_height,
+                    total_height,
+                )
+                rendered_html = template.render(
+                    **render_pdf_data, item_pages=item_pages
+                )
                 HTML(string=rendered_html, base_url=str(project_root)).write_pdf(
-                    target=str(pdf_path)
+                    target=str(pdf_path), presentational_hints=True
                 )
             except Exception as exc:
                 logger.exception(
