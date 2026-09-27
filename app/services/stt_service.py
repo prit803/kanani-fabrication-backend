@@ -84,6 +84,7 @@ class STTService:
             if transcript is None and isinstance(response, dict):
 
                 transcript = response.get("transcript")
+                print(f"Transcript from dict response: {transcript}")
 
             formatted_text = fabrication_formatter(transcript or "")
 
