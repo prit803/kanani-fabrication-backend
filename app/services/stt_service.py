@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+import mimetypes
 
 from fastapi import UploadFile
 
@@ -72,9 +73,8 @@ class STTService:
             logger.info(f"Audio file saved at : {input_file_path}")
 
             with open(input_file_path, "rb") as audio_file:
-
                 response = stt_client.speech_to_text.transcribe(
-                    file=audio_file,
+                    file=(input_file_path.name, audio_file, "audio/wav"),
                     model="saaras:v3",
                     mode="transcribe",
                 )
