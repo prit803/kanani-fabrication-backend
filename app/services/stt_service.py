@@ -79,7 +79,11 @@ class STTService:
                     mode="transcribe",
                 )
 
+
+
             transcript = getattr(response, "transcript", None)
+
+            print(f"Transcript from response object: {transcript}")
 
             if transcript is None and isinstance(response, dict):
 
