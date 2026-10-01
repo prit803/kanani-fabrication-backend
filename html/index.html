@@ -385,7 +385,7 @@
             </thead>
             <tbody>
               {% for item in page_items %}
-              <tr data-item-index="{{ loop.index0 }}" height="{{ item._print_row_height_px|default(0) }}">
+              <tr data-item-index="{{ loop.index0 }}">
                 <td class="center">{{ item.sr_no }}</td>
                 <td>{{ item.description }}</td>
                 <td class="center">{{ item.bill_date }}</td>

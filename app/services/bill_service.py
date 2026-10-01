@@ -20,9 +20,31 @@ from app.utils.response import ApiResponse
 logger = get_logger(__name__)
 
 PDF_EXPIRY_SECONDS = 5 * 60
-ITEM_TABLE_HEIGHT_MM = 145
+ITEM_TABLE_HEIGHT_MM = 145  # must match .item-table-frame height in index.html
 CSS_PIXEL_TO_MM = 25.4 / 96
 ITEM_ROW_SAFETY_MM = 0.3
+
+# Used ONLY for the measurement render. The real template puts the table inside
+# fixed-height / overflow:hidden / flex boxes, and WeasyPrint stops laying out
+# rows after roughly two pages in that setup. For measuring we want every row
+# laid out in plain flow, at the same width as in the final PDF.
+MEASUREMENT_CSS = """
+<style>
+  .page { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .bill, .bill-inner { display: block !important; height: auto !important;
+                       min-height: 0 !important; overflow: visible !important; }
+  .item-table-frame { height: auto !important; min-height: 0 !important;
+                      overflow: visible !important; flex: none !important; }
+  .item-total-table { position: static !important; }
+  .footer { position: static !important; }
+</style>
+"""
+
+
+def _with_measurement_css(html: str) -> str:
+    if "</head>" in html:
+        return html.replace("</head>", MEASUREMENT_CSS + "</head>", 1)
+    return MEASUREMENT_CSS + html
 
 
 def _measure_item_table_rows(document, item_count):
@@ -68,71 +90,45 @@ def _measure_item_table_rows(document, item_count):
 
 
 def _split_items_by_row_height(items, row_heights, header_height, total_height):
+    """
+    Split items into pages. Rows always keep their natural (measured) height;
+    they are never stretched to fill the table frame.
+
+    Rule: fill the fixed-height item table with rows. When the next row would
+    not fit in the remaining height, it goes to a new page. The last page must
+    also have room for the total row, so if the remaining rows fit on a page
+    but not together with the total row, the last row(s) move to a final page.
+    """
     frame_border_mm = 2 * CSS_PIXEL_TO_MM
     regular_capacity = ITEM_TABLE_HEIGHT_MM - frame_border_mm - header_height
     final_capacity = regular_capacity - total_height
-    measured_items = [
-        (item, row_height + ITEM_ROW_SAFETY_MM)
-        for item, row_height in zip(items, row_heights)
-    ]
-    if not measured_items:
+
+    if not items:
         return [[]]
 
-    item_count = len(measured_items)
-    page_counts = [float("inf")] * (item_count + 1)
-    fill_costs = [float("inf")] * (item_count + 1)
-    next_breaks = [None] * item_count
-    page_counts[item_count] = 0
-    fill_costs[item_count] = 0
-
-    for start in range(item_count - 1, -1, -1):
-        used_height = 0
-        best_result = (float("inf"), float("inf"))
-
-        for end in range(start + 1, item_count + 1):
-            used_height += measured_items[end - 1][1]
-            is_final_page = end == item_count
-            capacity = final_capacity if is_final_page else regular_capacity
-
-            if used_height > capacity and end - start > 1:
-                if is_final_page:
-                    continue
-                break
-
-            underfill = (capacity - used_height) / capacity
-            result = (1 + page_counts[end], underfill**2 + fill_costs[end])
-            if result < best_result:
-                best_result = result
-                next_breaks[start] = end
-
-            if used_height > capacity:
-                break
-
-        page_counts[start], fill_costs[start] = best_result
+    heights = [row_height + ITEM_ROW_SAFETY_MM for row_height in row_heights]
+    item_count = len(items)
 
     pages = []
     start = 0
     while start < item_count:
-        end = next_breaks[start]
-        if end is None:
-            raise ValueError("Could not split bill items within the table height.")
-        page_rows = measured_items[start:end]
-        is_final_page = end == item_count
-        capacity = final_capacity if is_final_page else regular_capacity
-        unused_height = max(
-            0, capacity - sum(row_height for _, row_height in page_rows)
-        )
-        extra_row_height = unused_height / len(page_rows)
-        pages.append(
-            [
-                {
-                    **item,
-                    "_print_row_height_px": (row_height + extra_row_height)
-                    / CSS_PIXEL_TO_MM,
-                }
-                for item, row_height in page_rows
-            ]
-        )
+        # Everything left fits on one page together with the total row.
+        # (A single oversized row is still placed so we never loop forever.)
+        if sum(heights[start:]) <= final_capacity or start == item_count - 1:
+            pages.append(items[start:])
+            break
+
+        # Otherwise fill a regular page, but always leave at least one row for
+        # the final page so the total row has a page to sit on.
+        end = start
+        used = 0
+        while end < item_count - 1 and (
+            end == start or used + heights[end] <= regular_capacity
+        ):
+            used += heights[end]
+            end += 1
+
+        pages.append(items[start:end])
         start = end
 
     return pages
@@ -745,7 +741,9 @@ class BillService:
                     **render_pdf_data,
                     "item_pages": [render_pdf_data["items"]],
                 }
-                measurement_html = template.render(**measurement_data)
+                measurement_html = _with_measurement_css(
+                    template.render(**measurement_data)
+                )
                 measurement_document = HTML(
                     string=measurement_html, base_url=str(project_root)
                 ).render(presentational_hints=True)
