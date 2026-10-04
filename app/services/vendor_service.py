@@ -3,10 +3,10 @@ import shutil
 from pathlib import Path
 
 from fastapi import UploadFile
-import requests
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
+from app.services.stt_client import client as sarvam_client
 from app.utils.helper import model_to_dict, models_to_list
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
@@ -21,14 +21,15 @@ def en_to_gu(text: str | None) -> str | None:
     if not text:
         return text
 
-    response = requests.post(
-        "https://translator.fastapicloud.dev/translate",
-        headers={"accept": "*/*"},
-        json={"text": text},
-        timeout=10,
+    response = sarvam_client.text.translate(
+        input=text,
+        source_language_code="en-IN",
+        target_language_code="gu-IN",
+        model="mayura:v1",
+        numerals_format="native",
+        mode="formal",
     )
-    response.raise_for_status()
-    return response.json()["translated_text"]
+    return response.translated_text
 
 
 class VendorService:
