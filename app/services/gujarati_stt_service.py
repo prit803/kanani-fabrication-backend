@@ -101,4 +101,6 @@ class GujaratiSTTService:
             )
         except Exception:
             logger.exception("Exception occurred during Gujarati speech recognition.")
-            return ApiResponse.error(error_message="Internal Server Error.", status_code=500)
+            return ApiResponse.error(
+                error_message="Internal Server Error.", status_code=500
+            )
