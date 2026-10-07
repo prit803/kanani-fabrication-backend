@@ -9,6 +9,7 @@ from app.routes.bill_routes import router as bill_router
 from app.routes.bill_item_routes import router as bill_item_router
 from app.routes.engineering_routes import router as engineering_router
 from app.routes.stt_routes import router as stt_router
+from app.routes.gujarati_stt_routes import router as gujarati_stt_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.dashboard_routes import router as dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
@@ -126,11 +127,17 @@ def home():
     return {"message": "Kanani Fabrication Works FastAPI Running"}
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 app.include_router(vendor_router)
 app.include_router(bill_router)
 app.include_router(bill_item_router)
 app.include_router(engineering_router)
 app.include_router(stt_router)
+app.include_router(gujarati_stt_router)
 app.include_router(dashboard_router)
 # app.include_router(admin_router)
 

@@ -5,7 +5,6 @@ from sarvamai import SarvamAI
 
 from app.utils.logger import get_logger
 
-
 logger = get_logger(__name__)
 
 load_dotenv()
@@ -13,10 +12,10 @@ load_dotenv()
 
 def _build_client():
     try:
-        api_key = os.getenv("STT_API_KEY")
+        api_key = os.getenv("STT_API_KEY") or os.getenv("SARVAM_API_KEY")
 
         if not api_key:
-            raise ValueError("STT_API_KEY is not configured in .env")
+            raise ValueError("STT_API_KEY or SARVAM_API_KEY is not configured in .env")
 
         client = SarvamAI(api_subscription_key=api_key)
         logger.info("Sarvam STT client initialized successfully.")

@@ -6,7 +6,6 @@ from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
-from app.services.stt_client import client as sarvam_client
 from app.utils.helper import model_to_dict, models_to_list
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
@@ -15,21 +14,6 @@ logger = get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parents[2]
 VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
 VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
-
-
-def en_to_gu(text: str | None) -> str | None:
-    if not text:
-        return text
-
-    response = sarvam_client.text.translate(
-        input=text,
-        source_language_code="en-IN",
-        target_language_code="gu-IN",
-        model="mayura:v1",
-        numerals_format="native",
-        mode="formal",
-    )
-    return response.translated_text
 
 
 class VendorService:
@@ -139,10 +123,10 @@ class VendorService:
 
             # Save Data
 
-            vendor.vendor_name = en_to_gu(vendor_name.strip())
+            vendor.vendor_name = vendor_name.strip()
             vendor.mobile_number = mobile_number.strip()
-            vendor.shop_name = en_to_gu(shop_name.strip()) if shop_name else None
-            vendor.address = en_to_gu(address.strip()) if address else None
+            vendor.shop_name = shop_name.strip() if shop_name else None
+            vendor.address = address.strip() if address else None
 
             if photo_file and photo_file.filename:
 
