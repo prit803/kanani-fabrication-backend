@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import func
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.bill_item_model import BillItem
@@ -65,9 +65,11 @@ class DashboardService:
                 db.query(Engineering).filter(Engineering.is_deleted.is_(False)).count()
             )
 
-            month_expression = func.strftime("%Y-%m", Bill.bill_date)
+            year_expression = extract("year", Bill.bill_date)
+            month_expression = extract("month", Bill.bill_date)
             monthly_rows = (
                 db.query(
+                    year_expression.label("year"),
                     month_expression.label("month"),
                     func.count(func.distinct(Bill.bill_id)).label("bill_count"),
                     func.coalesce(func.sum(BillItem.amount), 0).label("total_amount"),
@@ -78,8 +80,8 @@ class DashboardService:
                     (BillItem.bill_id == Bill.bill_id) & BillItem.is_deleted.is_(False),
                 )
                 .filter(*bill_filters)
-                .group_by(month_expression)
-                .order_by(month_expression.desc())
+                .group_by(year_expression, month_expression)
+                .order_by(year_expression.desc(), month_expression.desc())
                 .all()
             )
 
@@ -125,7 +127,7 @@ class DashboardService:
                 },
                 "monthly_summary": [
                     {
-                        "month": row.month,
+                        "month": f"{int(row.year):04d}-{int(row.month):02d}",
                         "bill_count": row.bill_count,
                         "total_amount": float(row.total_amount or 0),
                     }

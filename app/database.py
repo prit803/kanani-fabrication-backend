@@ -1,28 +1,127 @@
-from sqlalchemy import create_engine
+import os
+from pathlib import Path
+
+from dotenv import dotenv_values, load_dotenv
+from sqlalchemy import URL, create_engine, func, select, text
+from sqlalchemy.engine import Connection, make_url
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# SQLite Database URL
-DATABASE_URL = "sqlite:///./kanani.db"
 
-# Create Engine
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+ENV_FILE = PROJECT_ROOT / ".env"
+_dotenv_settings = dotenv_values(ENV_FILE)
+load_dotenv(ENV_FILE)
 
-# Session
+
+def _database_url() -> URL:
+    configured_url = os.getenv("DATABASE_URL")
+    if configured_url:
+        url = make_url(configured_url)
+        if url.drivername in {"postgres", "postgresql"}:
+            url = url.set(drivername="postgresql+psycopg")
+        if (
+            url.host
+            and url.host.endswith((".supabase.co", ".pooler.supabase.com"))
+            and "sslmode" not in url.query
+        ):
+            url = url.update_query_dict({"sslmode": "require"})
+        return url
+
+    def setting(environment_name: str, file_name: str | None = None) -> str | None:
+        value = os.getenv(environment_name)
+        if value:
+            return value
+        value = _dotenv_settings.get(file_name or environment_name)
+        return str(value) if value else None
+
+    host = setting("PGHOST", "HOST")
+    port = setting("PGPORT", "PORT") or "5432"
+    database = setting("PGDATABASE", "DATABASE")
+    username = setting("PGUSER", "USER")
+    password = setting("PGPASSWORD", "PASSWORD")
+    missing = [
+        name
+        for name, value in (
+            ("HOST", host),
+            ("DATABASE", database),
+            ("USER", username),
+            ("PASSWORD", password),
+        )
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(
+            "PostgreSQL configuration is incomplete. Set DATABASE_URL or the "
+            "HOST, PORT, DATABASE, USER, and PASSWORD values in .env. "
+            f"Missing: {', '.join(missing)}"
+        )
+
+    if host is None or database is None or username is None or password is None:
+        raise RuntimeError("PostgreSQL configuration is incomplete.")
+
+    query = (
+        {"sslmode": "require"}
+        if host.endswith((".supabase.co", ".pooler.supabase.com"))
+        else {}
+    )
+    return URL.create(
+        "postgresql+psycopg",
+        username=username,
+        password=password,
+        host=host,
+        port=int(port),
+        database=database,
+        query=query,
+    )
+
+
+DATABASE_URL = _database_url()
+_engine_options = {"pool_pre_ping": True}
+if DATABASE_URL.get_backend_name() == "sqlite":
+    _engine_options["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, **_engine_options)
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine
+    bind=engine,
 )
 
-# Base Model
 Base = declarative_base()
 
 
-# Database Dependency
+def sync_postgres_sequences(connection: Connection) -> None:
+    if connection.dialect.name != "postgresql":
+        return
+
+    for table in Base.metadata.sorted_tables:
+        primary_key = table.autoincrement_column
+        if primary_key is None:
+            continue
+
+        sequence = connection.scalar(
+            select(func.pg_get_serial_sequence(table.name, primary_key.name))
+        )
+        if not sequence:
+            continue
+
+        maximum_id = connection.scalar(select(func.max(primary_key)))
+        sequence_value = max(maximum_id or 0, 1)
+        connection.execute(
+            text(
+                "SELECT setval(CAST(:sequence_name AS regclass), "
+                ":sequence_value, :is_called)"
+            ),
+            {
+                "sequence_name": sequence,
+                "sequence_value": sequence_value,
+                "is_called": maximum_id is not None and maximum_id >= 1,
+            },
+        )
+
+
 def get_db():
     db = SessionLocal()
     try:

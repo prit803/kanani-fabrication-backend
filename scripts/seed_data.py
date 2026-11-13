@@ -1,17 +1,27 @@
-"""Seed the local SQLite database with clean engineering, vendor, bill, and bill-item data.
+"""Seed the configured database with engineering, vendor, bill, and bill-item data.
 
 Usage:
     python scripts/seed_data.py
 
-This script resets the database tables, clears SQLite AUTOINCREMENT counters, and
+This script resets the database tables, resets generated ID sequences, and
 re-inserts the default seed records required by the app.
 """
 
 import argparse
-import sqlite3
+import sys
 from collections import defaultdict
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.database import SessionLocal, engine, sync_postgres_sequences
+from app.models.bill_item_model import BillItem
+from app.models.bill_model import Bill
+from app.models.engineering_model import Engineering
+from app.models.vendor_model import Vendor
 
 ENGINEERING = [
     {
@@ -99,78 +109,60 @@ BILL_ITEMS = (
     + build_bill_items(2, 2, "મજૂરી આઇટમ")
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = PROJECT_ROOT / "kanani.db"
 
-
-def reset_database():
-    if not DB_PATH.exists():
-        print(f"Database not found: {DB_PATH}")
-        return
-
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.execute("PRAGMA foreign_keys = OFF")
-        for table in ["bill_items", "bills", "engineering", "vendors"]:
-            connection.execute(f"DELETE FROM {table}")
-            sequence_exists = connection.execute(
-                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'"
-            ).fetchone()
-            if sequence_exists:
-                connection.execute(
-                    "DELETE FROM sqlite_sequence WHERE name = ?",
-                    (table,),
-                )
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.commit()
-
-    print(f"Database cleaned and indexes reset: {DB_PATH}")
+def reset_database(db):
+    for model in (BillItem, Bill, Vendor, Engineering):
+        db.query(model).delete(synchronize_session=False)
 
 
 def seed_engineering(db):
-    for item in ENGINEERING:
-        db.execute(
-            "INSERT INTO engineering (engineer_id, name, pan_number, bank_account_number, is_deleted) VALUES (?, ?, ?, ?, 0)",
-            (
-                item["engineer_id"],
-                item["name"],
-                item.get("pan_number"),
-                item.get("bank_account_number"),
-            ),
-        )
-    db.commit()
+    db.add_all(
+        [
+            Engineering(
+                engineer_id=item["engineer_id"],
+                name=item["name"],
+                pan_number=item.get("pan_number"),
+                bank_account_number=item.get("bank_account_number"),
+                is_deleted=False,
+            )
+            for item in ENGINEERING
+        ]
+    )
     print(f"Inserted engineering rows: {len(ENGINEERING)}")
 
 
 def seed_vendors(db):
-    for vendor in VENDORS:
-        db.execute(
-            "INSERT INTO vendors (vendor_id, vendor_name, mobile_number, shop_name, address, status, is_deleted) VALUES (?, ?, ?, ?, ?, ?, 0)",
-            (
-                vendor["vendor_id"],
-                vendor["vendor_name"],
-                vendor["mobile_number"],
-                vendor.get("shop_name"),
-                vendor.get("address"),
-                vendor.get("status", "active"),
-            ),
-        )
-    db.commit()
+    db.add_all(
+        [
+            Vendor(
+                vendor_id=vendor["vendor_id"],
+                vendor_name=vendor["vendor_name"],
+                mobile_number=vendor["mobile_number"],
+                shop_name=vendor.get("shop_name"),
+                address=vendor.get("address"),
+                status=vendor.get("status", "active"),
+                is_deleted=False,
+            )
+            for vendor in VENDORS
+        ]
+    )
     print(f"Inserted vendor rows: {len(VENDORS)}")
 
 
 def seed_bills(db):
-    for bill in BILLS:
-        db.execute(
-            "INSERT INTO bills (bill_id, vendor_id, engineer_id, bill_date, status, is_deleted) VALUES (?, ?, ?, ?, ?, 0)",
-            (
-                bill["bill_id"],
-                bill["vendor_id"],
-                bill["engineer_id"],
-                bill["bill_date"],
-                bill["status"],
-            ),
-        )
-    db.commit()
+    db.add_all(
+        [
+            Bill(
+                bill_id=bill["bill_id"],
+                vendor_id=bill["vendor_id"],
+                engineer_id=bill["engineer_id"],
+                bill_date=date.fromisoformat(bill["bill_date"]),
+                status=bill["status"],
+                is_deleted=False,
+            )
+            for bill in BILLS
+        ]
+    )
     print(f"Inserted bill rows: {len(BILLS)}")
 
 
@@ -183,25 +175,26 @@ def seed_bill_items(db):
     for bill_id, items in sorted(grouped.items()):
         for item in items:
             amount = Decimal(str(item["quantity"])) * Decimal(str(item["rate"]))
-            db.execute(
-                "INSERT INTO bill_items (bill_item_id, bill_id, item_description, quantity, rate, amount, audio_file_url, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
-                (
-                    inserted,
-                    bill_id,
-                    item["item_description"],
-                    float(item["quantity"]),
-                    float(item["rate"]),
-                    float(amount),
-                    item.get("audio_file_url") or None,
-                ),
+            db.add(
+                BillItem(
+                    bill_item_id=inserted,
+                    bill_id=bill_id,
+                    item_description=item["item_description"],
+                    quantity=Decimal(str(item["quantity"])),
+                    rate=Decimal(str(item["rate"])),
+                    amount=amount,
+                    audio_file_url=item.get("audio_file_url") or None,
+                    is_deleted=False,
+                )
             )
             inserted += 1
-    db.commit()
     print(f"Inserted bill item rows: {inserted}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reset and seed local SQLite database")
+    parser = argparse.ArgumentParser(
+        description="Reset and seed the database configured in .env"
+    )
     parser.add_argument(
         "--no-reset",
         action="store_true",
@@ -209,17 +202,27 @@ def main():
     )
     args = parser.parse_args()
 
-    if not args.no_reset:
-        reset_database()
+    db = SessionLocal()
+    try:
+        if not args.no_reset:
+            reset_database(db)
 
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.row_factory = sqlite3.Row
-        seed_engineering(connection)
-        seed_vendors(connection)
-        seed_bills(connection)
-        seed_bill_items(connection)
+        seed_engineering(db)
+        seed_vendors(db)
+        seed_bills(db)
+        seed_bill_items(db)
+        db.commit()
+        if not args.no_reset:
+            print("Configured database tables cleaned.")
+        with engine.begin() as connection:
+            sync_postgres_sequences(connection)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
-    print("Seed completed successfully.")
+    print(f"Seed completed successfully using {engine.dialect.name}.")
 
 
 if __name__ == "__main__":

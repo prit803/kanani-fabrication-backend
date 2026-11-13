@@ -11,11 +11,6 @@ router = APIRouter(
 def delete_database():
     return AdminService.delete_database()
 
-from fastapi import UploadFile, File
-
-
 @router.post("/database")
-def upload_database(
-    file: UploadFile = File(...)
-):
-    return AdminService.upload_database(file)
+def upload_database():
+    return AdminService.upload_database()

@@ -25,7 +25,7 @@ class Bill(Base):
 
     bill_date = Column(Date, nullable=False)
 
-    status = Column(Enum("pending", "paid"), default="pending")
+    status = Column(Enum("pending", "paid", name="bill_status"), default="pending")
 
     is_deleted = Column(Boolean, default=False)
 
