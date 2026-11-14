@@ -138,6 +138,22 @@ class BillItemService:
                 )
 
             engineer_id = getattr(request, "engineer_id", None)
+            if engineer_id is not None:
+                engineer = (
+                    db.query(Engineering)
+                    .filter(
+                        Engineering.engineer_id == engineer_id,
+                        Engineering.is_deleted.is_(False),
+                    )
+                    .first()
+                )
+                if engineer is None:
+                    logger.warning(
+                        f"Engineering not found. Engineer Id : {engineer_id}"
+                    )
+                    return ApiResponse.error(
+                        error_message="Engineering not found.", status_code=404
+                    )
 
             # Determine or create Bill.
             # IMPORTANT: for update requests, bill may be identified by item.bill_id

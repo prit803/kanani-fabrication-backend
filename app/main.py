@@ -11,6 +11,7 @@ from app.routes.engineering_routes import router as engineering_router
 from app.routes.stt_routes import router as stt_router
 from app.routes.gujarati_stt_routes import router as gujarati_stt_router
 from app.routes.admin_routes import router as admin_router
+from app.routes.data_admin_routes import router as data_admin_router
 from app.routes.dashboard_routes import router as dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -44,8 +45,6 @@ def seed_default_engineers():
             engineer = db.get(Engineering, engineer_id)
             if engineer is None:
                 db.add(Engineering(engineer_id=engineer_id, name=name))
-            else:
-                engineer.name = name
         db.commit()
     finally:
         db.close()
@@ -139,6 +138,7 @@ app.include_router(engineering_router)
 app.include_router(stt_router)
 app.include_router(gujarati_stt_router)
 app.include_router(dashboard_router)
+app.include_router(data_admin_router)
 # app.include_router(admin_router)
 
 # Mount storage folder so files under `storage/` are served at `/storage`.

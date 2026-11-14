@@ -1,6 +1,8 @@
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 from types import SimpleNamespace
 
@@ -10,6 +12,7 @@ os.environ.setdefault("STT_API_KEY", "test-api-key")
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -20,6 +23,7 @@ from app.models.engineering_model import Engineering
 from app.models.vendor_model import Vendor
 from app.routes.bill_item_routes import router as bill_item_router
 from app.routes.bill_routes import router as bill_router
+from app.routes.data_admin_routes import router as data_admin_router
 from app.routes.dashboard_routes import router as dashboard_router
 from app.routes.engineering_routes import router as engineering_router
 from app.routes.gujarati_stt_routes import router as gujarati_stt_router
@@ -45,6 +49,7 @@ def create_test_app():
     app.include_router(stt_router)
     app.include_router(gujarati_stt_router)
     app.include_router(dashboard_router)
+    app.include_router(data_admin_router)
     return app
 
 
@@ -115,6 +120,156 @@ class ApiSmokeTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()["data"]
+
+    def test_clean_data_requires_auth_and_confirmation_then_erases_database_and_files(self):
+        self.create_bill_item()
+        with tempfile.TemporaryDirectory() as temporary_storage:
+            storage = os.path.join(temporary_storage, "storage")
+            vendor_files = os.path.join(storage, "vendors")
+            os.makedirs(vendor_files)
+            photo = os.path.join(vendor_files, "vendor.jpg")
+            with open(photo, "wb") as file:
+                file.write(b"test image")
+
+            body = {"confirmation": "DELETE ALL DATA"}
+            with patch.dict(os.environ, {"CLEAN_DATA_API_KEY": "test-clean-key"}):
+                unauthorized = self.client.post("/admin/clean-data", json=body)
+                self.assertEqual(unauthorized.status_code, 401)
+
+                wrong_key = self.client.post(
+                    "/admin/clean-data",
+                    json=body,
+                    headers={"X-Clean-Data-Key": "wrong-key"},
+                )
+                self.assertEqual(wrong_key.status_code, 401)
+
+                bad_confirmation = self.client.post(
+                    "/admin/clean-data",
+                    json={"confirmation": "DELETE"},
+                    headers={"X-Clean-Data-Key": "test-clean-key"},
+                )
+                self.assertEqual(bad_confirmation.status_code, 422)
+
+                self.assertTrue(os.path.isfile(photo))
+                with self.session_factory() as db:
+                    self.assertEqual(db.query(BillItem).count(), 1)
+                    self.assertEqual(db.query(Bill).count(), 1)
+
+                with patch(
+                    "app.services.data_cleanup_service.STORAGE_DIR",
+                    Path(storage),
+                ):
+                    response = self.client.post(
+                        "/admin/clean-data",
+                        json=body,
+                        headers={"X-Clean-Data-Key": "test-clean-key"},
+                    )
+
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(
+                response.json()["data"],
+                {
+                    "deleted_rows": {
+                        "bill_items": 1,
+                        "bills": 1,
+                        "vendors": 1,
+                        "engineering": 2,
+                    },
+                    "deleted_files": 1,
+                },
+            )
+            self.assertFalse(os.path.exists(photo))
+            self.assertTrue(os.path.isdir(storage))
+
+            with self.session_factory() as db:
+                self.assertEqual(db.query(BillItem).count(), 0)
+                self.assertEqual(db.query(Bill).count(), 0)
+                self.assertEqual(db.query(Vendor).count(), 0)
+                self.assertEqual(db.query(Engineering).count(), 0)
+
+            with patch.dict(os.environ, {"CLEAN_DATA_API_KEY": "test-clean-key"}), patch(
+                "app.services.data_cleanup_service.STORAGE_DIR",
+                Path(storage),
+            ):
+                repeated_response = self.client.post(
+                    "/admin/clean-data",
+                    json=body,
+                    headers={"X-Clean-Data-Key": "test-clean-key"},
+                )
+            self.assertEqual(repeated_response.status_code, 200)
+            self.assertEqual(
+                repeated_response.json()["data"]["deleted_rows"],
+                {"bill_items": 0, "bills": 0, "vendors": 0, "engineering": 0},
+            )
+
+    def test_clean_data_database_failure_preserves_rows_and_files(self):
+        self.create_bill_item()
+        with tempfile.TemporaryDirectory() as temporary_storage:
+            storage = Path(temporary_storage) / "storage"
+            storage.mkdir()
+            uploaded_file = storage / "upload.wav"
+            uploaded_file.write_bytes(b"test upload")
+            with (
+                patch.dict(os.environ, {"CLEAN_DATA_API_KEY": "test-clean-key"}),
+                patch("app.services.data_cleanup_service.STORAGE_DIR", storage),
+                patch(
+                    "app.services.data_cleanup_service.sync_postgres_sequences",
+                    side_effect=SQLAlchemyError("test database failure"),
+                ),
+            ):
+                response = self.client.post(
+                    "/admin/clean-data",
+                    json={"confirmation": "DELETE ALL DATA"},
+                    headers={"X-Clean-Data-Key": "test-clean-key"},
+                )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(uploaded_file.is_file())
+            with self.session_factory() as db:
+                self.assertEqual(db.query(BillItem).count(), 1)
+                self.assertEqual(db.query(Bill).count(), 1)
+                self.assertEqual(db.query(Vendor).count(), 1)
+                self.assertEqual(db.query(Engineering).count(), 2)
+
+    def test_clean_data_storage_failure_reports_committed_database_deletion(self):
+        self.create_bill_item()
+        with (
+            patch.dict(os.environ, {"CLEAN_DATA_API_KEY": "test-clean-key"}),
+            patch(
+                "app.services.data_cleanup_service._delete_storage_files",
+                side_effect=OSError("test storage failure"),
+            ),
+        ):
+            response = self.client.post(
+                "/admin/clean-data",
+                json={"confirmation": "DELETE ALL DATA"},
+                headers={"X-Clean-Data-Key": "test-clean-key"},
+            )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.json()["data"]["deleted_rows"],
+            {
+                "bill_items": 1,
+                "bills": 1,
+                "vendors": 1,
+                "engineering": 2,
+            },
+        )
+        with self.session_factory() as db:
+            self.assertEqual(db.query(BillItem).count(), 0)
+            self.assertEqual(db.query(Bill).count(), 0)
+            self.assertEqual(db.query(Vendor).count(), 0)
+            self.assertEqual(db.query(Engineering).count(), 0)
+
+    def test_clean_data_requires_server_configuration(self):
+        with patch.dict(os.environ, {"CLEAN_DATA_API_KEY": ""}):
+            response = self.client.post(
+                "/admin/clean-data",
+                json={"confirmation": "DELETE ALL DATA"},
+                headers={"X-Clean-Data-Key": "test-clean-key"},
+            )
+        self.assertEqual(response.status_code, 503)
 
     def test_health_and_disabled_admin_routes(self):
         self.assertEqual(
@@ -316,6 +471,26 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(self.client.delete(f"/bills/{bill_id}").status_code, 200)
         self.assertEqual(self.client.delete(f"/bills/{bill_id}").status_code, 404)
         self.assertEqual(self.client.post("/bills").status_code, 405)
+
+    def test_bill_item_rejects_unknown_engineer(self):
+        with self.session_factory() as db:
+            db.query(Engineering).filter(Engineering.engineer_id == 0).delete()
+            db.commit()
+
+        response = self.client.post(
+            "/bill-items",
+            json={
+                "vendor_id": 1,
+                "engineer_id": 0,
+                "items": [{"item_description": "Test fabrication item"}],
+            },
+        )
+
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertEqual(response.json()["errorMessage"], "Engineering not found.")
+        with self.session_factory() as db:
+            self.assertEqual(db.query(Bill).count(), 0)
+            self.assertEqual(db.query(BillItem).count(), 0)
 
     def test_dashboard_queries_and_date_validation(self):
         self.create_bill_item()
