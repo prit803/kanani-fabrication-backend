@@ -148,26 +148,6 @@ class DatabaseMigrationTests(unittest.TestCase):
         self.assertEqual(database_url.drivername, "postgresql+psycopg")
         self.assertEqual(database_url.query["sslmode"], "require")
 
-    def test_database_url_reads_cloud_database_environment_variables(self):
-        with patch.dict(
-            os.environ,
-            {
-                "DATABASE_URL": "",
-                "DB_HOST": "db.example.com",
-                "DB_PORT": "6543",
-                "DATABASE": "fabrication",
-                "DB_USER": "app-user",
-                "DB_PASSWORD": "test-password",
-            },
-        ):
-            database_url = _database_url()
-
-        self.assertEqual(database_url.host, "db.example.com")
-        self.assertEqual(database_url.port, 6543)
-        self.assertEqual(database_url.database, "fabrication")
-        self.assertEqual(database_url.username, "app-user")
-        self.assertEqual(database_url.password, "test-password")
-
     def test_bill_status_enum_compiles_for_postgresql(self):
         bill_status_type = Bill.__table__.c.status.type
         self.assertEqual(bill_status_type.name, "bill_status")

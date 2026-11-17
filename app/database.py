@@ -28,30 +28,18 @@ def _database_url() -> URL:
             url = url.update_query_dict({"sslmode": "require"})
         return url
 
-    def setting(
-        environment_names: tuple[str, ...],
-        file_names: tuple[str, ...],
-    ) -> str | None:
-        for name in environment_names:
-            value = os.getenv(name)
-            if value:
-                return value
-        for name in file_names:
-            value = _dotenv_settings.get(name)
-            if value:
-                return str(value)
-        return None
+    def setting(environment_name: str, file_name: str | None = None) -> str | None:
+        value = os.getenv(environment_name)
+        if value:
+            return value
+        value = _dotenv_settings.get(file_name or environment_name)
+        return str(value) if value else None
 
-    host = setting(("PGHOST", "DB_HOST"), ("PGHOST", "DB_HOST", "HOST"))
-    port = setting(("PGPORT", "DB_PORT"), ("PGPORT", "DB_PORT", "PORT")) or "5432"
-    database = setting(
-        ("PGDATABASE", "DB_DATABASE", "DATABASE"),
-        ("PGDATABASE", "DB_DATABASE", "DATABASE"),
-    )
-    username = setting(("PGUSER", "DB_USER"), ("PGUSER", "DB_USER", "USER"))
-    password = setting(
-        ("PGPASSWORD", "DB_PASSWORD"), ("PGPASSWORD", "DB_PASSWORD", "PASSWORD")
-    )
+    host = setting("PGHOST", "DB_HOST")
+    port = setting("PGPORT", "DB_PORT") or "5432"
+    database = setting("PGDATABASE", "DB_DATABASE")
+    username = setting("PGUSER", "DB_USER")
+    password = setting("PGPASSWORD", "DB_PASSWORD")
     missing = [
         name
         for name, value in (
@@ -65,8 +53,7 @@ def _database_url() -> URL:
     if missing:
         raise RuntimeError(
             "PostgreSQL configuration is incomplete. Set DATABASE_URL or the "
-            "HOST, PORT, DATABASE, USER, and PASSWORD values in .env or the "
-            "deployment environment. "
+            "HOST, PORT, DATABASE, USER, and PASSWORD values in .env. "
             f"Missing: {', '.join(missing)}"
         )
 
