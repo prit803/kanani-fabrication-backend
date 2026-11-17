@@ -12,7 +12,7 @@ class Engineering(Base):
 
     name = Column(String(255), nullable=False)
 
-    sign_image = Column(String(500), nullable=True)
+    sign_image = Column(Text, nullable=True)
 
     pan_number = Column(String(50), nullable=True)
 

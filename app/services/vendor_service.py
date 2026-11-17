@@ -1,19 +1,13 @@
-from datetime import datetime
-import shutil
-from pathlib import Path
-
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.vendor_model import Vendor
 from app.utils.helper import model_to_dict, models_to_list
 from app.utils.logger import get_logger
+from app.utils.media import InvalidImageError, image_data_uri_from_upload
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
-BASE_DIR = Path(__file__).resolve().parents[2]
-VENDOR_PHOTO_FOLDER = BASE_DIR / "storage" / "vendors"
-VENDOR_PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 class VendorService:
@@ -129,22 +123,7 @@ class VendorService:
             vendor.address = address.strip() if address else None
 
             if photo_file and photo_file.filename:
-
-                safe_file_name = Path(photo_file.filename).name
-                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-                file_extension = Path(safe_file_name).suffix.lower()
-                stored_file_name = (
-                    f"vendor_{vendor_id or 'new'}_{timestamp}{file_extension}"
-                )
-                photo_path = VENDOR_PHOTO_FOLDER / stored_file_name
-
-                with open(photo_path, "wb") as buffer:
-                    shutil.copyfileobj(photo_file.file, buffer)
-
-                # Store URL path (served by FastAPI or nginx) instead of filesystem path
-                vendor.photo_url = f"/storage/vendors/{stored_file_name}"
-
-                logger.info(f"Vendor photo saved at : {photo_path}")
+                vendor.photo_url = image_data_uri_from_upload(photo_file)
 
             elif vendor_id is None:
 
@@ -160,7 +139,11 @@ class VendorService:
 
             return ApiResponse.success(data=model_to_dict(vendor), message=message)
 
-        except Exception as ex:
+        except InvalidImageError as ex:
+            db.rollback()
+            return ApiResponse.error(error_message=str(ex), status_code=400)
+
+        except Exception:
 
             db.rollback()
 

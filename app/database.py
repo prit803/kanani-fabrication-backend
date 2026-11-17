@@ -35,11 +35,11 @@ def _database_url() -> URL:
         value = _dotenv_settings.get(file_name or environment_name)
         return str(value) if value else None
 
-    host = setting("PGHOST", "HOST")
-    port = setting("PGPORT", "PORT") or "5432"
-    database = setting("PGDATABASE", "DATABASE")
-    username = setting("PGUSER", "USER")
-    password = setting("PGPASSWORD", "PASSWORD")
+    host = setting("PGHOST", "DB_HOST")
+    port = setting("PGPORT", "DB_PORT") or "5432"
+    database = setting("PGDATABASE", "DB_DATABASE")
+    username = setting("PGUSER", "DB_USER")
+    password = setting("PGPASSWORD", "DB_PASSWORD")
     missing = [
         name
         for name, value in (

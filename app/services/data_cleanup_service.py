@@ -9,13 +9,14 @@ from app.database import sync_postgres_sequences
 from app.models.bill_item_model import BillItem
 from app.models.bill_model import Bill
 from app.models.engineering_model import Engineering
+from app.models.recording_model import SpeechRecording
 from app.models.vendor_model import Vendor
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
 STORAGE_DIR = Path(__file__).resolve().parents[2] / "storage"
-DATA_MODELS = (BillItem, Bill, Vendor, Engineering)
+DATA_MODELS = (BillItem, Bill, Vendor, Engineering, SpeechRecording)
 
 
 def _is_link_or_junction(path: Path) -> bool:
