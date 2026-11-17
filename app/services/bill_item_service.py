@@ -276,7 +276,7 @@ class BillItemService:
                 audio_val = getattr(item_req, "audio_file_url", None)
                 if audio_val:
                     # If already a storage URL, keep as-is
-                    if str(audio_val).startswith(("/storage", "/stt/recordings/")):
+                    if str(audio_val).startswith("/storage"):
                         bill_item.audio_file_url = str(audio_val)
                     else:
                         p = Path(str(audio_val))

@@ -15,7 +15,6 @@ from app.models.engineering_model import Engineering
 from app.models.vendor_model import Vendor
 from app.utils.helper import model_to_dict
 from app.utils.logger import get_logger
-from app.utils.media import image_data_uri_from_file
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
@@ -649,16 +648,12 @@ class BillService:
             sign_image_path = ""
             if engineer and engineer.sign_image:
                 stored_sign_image = engineer.sign_image.strip()
-                if stored_sign_image.startswith("data:image/"):
-                    sign_image_path = stored_sign_image
-                else:
-                    if stored_sign_image.startswith("/storage/"):
-                        stored_sign_image = stored_sign_image.lstrip("/")
-                    sign_image_file = project_root / stored_sign_image
-                    if sign_image_file.is_file():
-                        sign_image_path = (
-                            image_data_uri_from_file(sign_image_file) or ""
-                        )
+                if stored_sign_image.startswith("/storage/"):
+                    stored_sign_image = stored_sign_image.lstrip("/")
+
+                sign_image_file = project_root / stored_sign_image
+                if sign_image_file.is_file():
+                    sign_image_path = sign_image_file.as_uri()
 
             pdf_data = {
                 "vendor_id": vendor.vendor_id,

@@ -1,22 +1,27 @@
-from io import BytesIO
-import mimetypes
+from datetime import datetime
 from pathlib import Path
+import mimetypes
 
 from fastapi import UploadFile
-from sqlalchemy.orm import Session
 
-from app.models.recording_model import SpeechRecording
 from app.utils.logger import get_logger
 from app.utils.response import ApiResponse
 from app.services.stt_client import client as stt_client
 
 logger = get_logger(__name__)
 
+BASE_DIR = Path(__file__).resolve().parents[2]
+INPUT_FOLDER = BASE_DIR / "storage" / "stt" / "input"
+OUTPUT_FOLDER = BASE_DIR / "storage" / "stt" / "output"
+
+INPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+
 
 class STTService:
 
     @staticmethod
-    async def speech_to_text(file: UploadFile, db: Session):
+    async def speech_to_text(file: UploadFile):
 
         try:
 
@@ -54,43 +59,45 @@ class STTService:
                     status_code=500,
                 )
 
-            file_content = await file.read()
-            if not file_content:
-                return ApiResponse.error(
-                    error_message="Audio file is empty.", status_code=400
-                )
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-            content_type = file.content_type or mimetypes.guess_type(safe_file_name)[0]
-            response = stt_client.speech_to_text.transcribe(
-                file=(
-                    safe_file_name,
-                    BytesIO(file_content),
-                    content_type or "application/octet-stream",
-                ),
-                model="saaras:v3",
-                mode="transcribe",
-            )
+            input_file_path = INPUT_FOLDER / f"{timestamp}_{safe_file_name}"
+            output_file_path = OUTPUT_FOLDER / f"{timestamp}.txt"
+
+            file_content = await file.read()
+
+            with open(input_file_path, "wb") as buffer:
+
+                buffer.write(file_content)
+
+            logger.info(f"Audio file saved at : {input_file_path}")
+
+            with open(input_file_path, "rb") as audio_file:
+                response = stt_client.speech_to_text.transcribe(
+                    file=(input_file_path.name, audio_file, "audio/wav"),
+                    model="saaras:v3",
+                    mode="transcribe",
+                )
 
             transcript = getattr(response, "transcript", None)
 
+            print(f"Transcript from response object: {transcript}")
+
             if transcript is None and isinstance(response, dict):
+
                 transcript = response.get("transcript")
+                print(f"Transcript from dict response: {transcript}")
 
             formatted_text = fabrication_formatter(transcript or "")
 
-            recording = SpeechRecording(
-                filename=safe_file_name,
-                content_type=content_type or "application/octet-stream",
-                audio_data=file_content,
-                transcript=formatted_text,
-            )
-            db.add(recording)
-            db.commit()
-            db.refresh(recording)
+            with open(output_file_path, "w", encoding="utf-8") as text_file:
 
+                text_file.write(formatted_text)
+
+            # Provide URL paths relative to the mounted /storage
             data = {
-                "recordingId": recording.recording_id,
-                "audioUrl": f"/stt/recordings/{recording.recording_id}/audio",
+                "inputFile": f"/storage/stt/input/{input_file_path.name}",
+                "outputFile": f"/storage/stt/output/{output_file_path.name}",
                 "transcription": formatted_text,
             }
 
@@ -101,62 +108,12 @@ class STTService:
             )
 
         except Exception:
-            db.rollback()
 
             logger.exception("Exception occurred while processing speech to text.")
 
             return ApiResponse.error(
                 error_message="Internal Server Error.",
                 status_code=500,
-            )
-
-    @staticmethod
-    def get_recording(db: Session, recording_id: int):
-        try:
-            recording = db.get(SpeechRecording, recording_id)
-            if recording is None:
-                return ApiResponse.error(
-                    error_message="Recording not found.", status_code=404
-                )
-            return ApiResponse.success(
-                data={
-                    "recordingId": recording.recording_id,
-                    "filename": recording.filename,
-                    "contentType": recording.content_type,
-                    "transcription": recording.transcript,
-                    "audioUrl": f"/stt/recordings/{recording.recording_id}/audio",
-                    "createdAt": (
-                        recording.created_at.isoformat()
-                        if recording.created_at
-                        else None
-                    ),
-                },
-                message="Recording fetched successfully.",
-            )
-        except Exception:
-            logger.exception("Exception occurred while fetching recording.")
-            return ApiResponse.error(
-                error_message="Internal Server Error.", status_code=500
-            )
-
-    @staticmethod
-    def get_recording_audio(db: Session, recording_id: int):
-        from fastapi.responses import Response
-
-        try:
-            recording = db.get(SpeechRecording, recording_id)
-            if recording is None:
-                return ApiResponse.error(
-                    error_message="Recording not found.", status_code=404
-                )
-            return Response(
-                content=recording.audio_data,
-                media_type=recording.content_type,
-            )
-        except Exception:
-            logger.exception("Exception occurred while fetching recording audio.")
-            return ApiResponse.error(
-                error_message="Internal Server Error.", status_code=500
             )
 
 

@@ -4,7 +4,6 @@ from sqlalchemy import inspect, text
 from app.database import Base, SessionLocal, engine
 
 from app.models.engineering_model import Engineering
-from app.models.vendor_model import Vendor
 from app.routes.vendor_routes import router as vendor_router
 from app.routes.bill_routes import router as bill_router
 from app.routes.bill_item_routes import router as bill_item_router
@@ -17,7 +16,7 @@ from app.routes.dashboard_routes import router as dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from app.utils.media import image_data_uri_from_file
+import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,11 +30,6 @@ def migrate_database_schema():
                 connection.execute(
                     text("ALTER TABLE bills ADD COLUMN engineer_id INTEGER")
                 )
-    if inspector.has_table("engineering") and engine.dialect.name == "postgresql":
-        with engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE engineering ALTER COLUMN sign_image TYPE TEXT")
-            )
 
 
 migrate_database_schema()
@@ -56,51 +50,64 @@ def seed_default_engineers():
         db.close()
 
 
-def migrate_legacy_image_data():
+def migrate_engineering_sign_images():
     from sqlalchemy.orm import Session
 
     project_root = Path(__file__).resolve().parent.parent
+    new_dir = project_root / "storage" / "engineering"
+    marker_file = new_dir / ".legacy_sign_image_migration_done"
+
+    if marker_file.exists():
+        return
+
+    new_dir.mkdir(parents=True, exist_ok=True)
 
     db: Session = SessionLocal()
     try:
-        changed = False
-        for model, column_name in (
-            (Engineering, "sign_image"),
-            (Vendor, "photo_url"),
-        ):
-            for record in db.query(model).all():
-                old_value = (getattr(record, column_name) or "").strip()
-                if not old_value or old_value.startswith("data:image/"):
-                    continue
+        engineers = (
+            db.query(Engineering).filter(Engineering.is_deleted.is_(False)).all()
+        )
 
-                if old_value.startswith("/storage/"):
-                    relative_path = old_value.lstrip("/")
-                elif old_value.startswith(("/app/images/", "app/images/")):
-                    relative_path = old_value.lstrip("/")
-                elif old_value.startswith("storage/"):
-                    relative_path = old_value
-                else:
-                    continue
+        for engineering in engineers:
+            old_value = (engineering.sign_image or "").strip()
+            if not old_value:
+                continue
 
-                image_path = (project_root / relative_path).resolve()
-                if (
-                    project_root.resolve() not in image_path.parents
-                    or not image_path.is_file()
-                ):
-                    continue
-                data_uri = image_data_uri_from_file(image_path)
-                if data_uri:
-                    setattr(record, column_name, data_uri)
-                    changed = True
+            if old_value.startswith("/storage/"):
+                continue
 
-        if changed:
-            db.commit()
+            old_path = project_root / old_value.lstrip("/")
+            new_filename = (
+                Path(old_value).name
+                if Path(old_value).name
+                else f"engineering_{engineering.engineer_id}.png"
+            )
+
+            if old_path.exists():
+                target_path = new_dir / new_filename
+                if not target_path.exists():
+                    target_path.write_bytes(old_path.read_bytes())
+                engineering.sign_image = f"/storage/engineering/{new_filename}"
+            elif old_value.startswith("/app/images/") or old_value.startswith(
+                "app/images/"
+            ):
+                moved_name = Path(old_value).name
+                old_file = project_root / "app" / "images" / moved_name
+                if old_file.exists():
+                    target_path = new_dir / moved_name
+                    if not target_path.exists():
+                        target_path.write_bytes(old_file.read_bytes())
+                    engineering.sign_image = f"/storage/engineering/{moved_name}"
+
+        db.commit()
     finally:
         db.close()
 
+    marker_file.write_text("done", encoding="utf-8")
+
 
 seed_default_engineers()
-migrate_legacy_image_data()
+migrate_engineering_sign_images()
 
 app = FastAPI(title="Kanani Fabrication Works API")
 

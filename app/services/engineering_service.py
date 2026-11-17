@@ -1,13 +1,19 @@
+import shutil
+from datetime import datetime
+from pathlib import Path
+
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.engineering_model import Engineering
 from app.utils.helper import model_to_dict, models_to_list
 from app.utils.logger import get_logger
-from app.utils.media import InvalidImageError, image_data_uri_from_upload
 from app.utils.response import ApiResponse
 
 logger = get_logger(__name__)
+BASE_DIR = Path(__file__).resolve().parents[2]
+ENGINEERING_IMAGE_FOLDER = BASE_DIR / "storage" / "engineering"
+ENGINEERING_IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 class EngineeringService:
@@ -118,7 +124,18 @@ class EngineeringService:
             )
 
             if sign_image and sign_image.filename:
-                engineering.sign_image = image_data_uri_from_upload(sign_image)
+                safe_file_name = Path(sign_image.filename).name
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                file_extension = Path(safe_file_name).suffix.lower()
+                stored_file_name = (
+                    f"engineering_{engineer_id or 'new'}_{timestamp}{file_extension}"
+                )
+                image_path = ENGINEERING_IMAGE_FOLDER / stored_file_name
+
+                with open(image_path, "wb") as buffer:
+                    shutil.copyfileobj(sign_image.file, buffer)
+
+                engineering.sign_image = f"/storage/engineering/{stored_file_name}"
 
             elif engineer_id is None:
                 engineering.sign_image = None
@@ -128,10 +145,6 @@ class EngineeringService:
 
             logger.info(message)
             return ApiResponse.success(data=model_to_dict(engineering), message=message)
-
-        except InvalidImageError as ex:
-            db.rollback()
-            return ApiResponse.error(error_message=str(ex), status_code=400)
 
         except Exception:
             db.rollback()

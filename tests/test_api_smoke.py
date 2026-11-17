@@ -20,7 +20,6 @@ from app.database import Base, get_db
 from app.models.bill_item_model import BillItem
 from app.models.bill_model import Bill
 from app.models.engineering_model import Engineering
-from app.models.recording_model import SpeechRecording
 from app.models.vendor_model import Vendor
 from app.routes.bill_item_routes import router as bill_item_router
 from app.routes.bill_routes import router as bill_router
@@ -85,7 +84,7 @@ class ApiSmokeTests(unittest.TestCase):
 
     def setUp(self):
         with self.session_factory() as db:
-            for model in (BillItem, Bill, Vendor, Engineering, SpeechRecording):
+            for model in (BillItem, Bill, Vendor, Engineering):
                 db.query(model).delete(synchronize_session=False)
             db.add_all(
                 [
@@ -175,7 +174,6 @@ class ApiSmokeTests(unittest.TestCase):
                         "bills": 1,
                         "vendors": 1,
                         "engineering": 2,
-                        "speech_recordings": 0,
                     },
                     "deleted_files": 1,
                 },
@@ -201,13 +199,7 @@ class ApiSmokeTests(unittest.TestCase):
             self.assertEqual(repeated_response.status_code, 200)
             self.assertEqual(
                 repeated_response.json()["data"]["deleted_rows"],
-                {
-                    "bill_items": 0,
-                    "bills": 0,
-                    "vendors": 0,
-                    "engineering": 0,
-                    "speech_recordings": 0,
-                },
+                {"bill_items": 0, "bills": 0, "vendors": 0, "engineering": 0},
             )
 
     def test_clean_data_database_failure_preserves_rows_and_files(self):
@@ -262,7 +254,6 @@ class ApiSmokeTests(unittest.TestCase):
                 "bills": 1,
                 "vendors": 1,
                 "engineering": 2,
-                "speech_recordings": 0,
             },
         )
         with self.session_factory() as db:
@@ -305,15 +296,9 @@ class ApiSmokeTests(unittest.TestCase):
                 "mobile_number": "9876543210",
                 "shop_name": "Test Shop",
             },
-            files={"photo_file": ("vendor.png", b"vendor-image", "image/png")},
         )
         self.assertEqual(created_vendor.status_code, 200, created_vendor.text)
         vendor_id = created_vendor.json()["data"]["vendor_id"]
-        vendor_image = created_vendor.json()["data"]["photo_url"]
-        self.assertEqual(vendor_image, "data:image/png;base64,dmVuZG9yLWltYWdl")
-        with self.session_factory() as db:
-            self.assertEqual(db.get(Vendor, vendor_id).photo_url, vendor_image)
-
         updated_vendor = self.client.post(
             "/vendors",
             data={
@@ -341,14 +326,9 @@ class ApiSmokeTests(unittest.TestCase):
         created_engineer = self.client.post(
             "/engineering",
             data={"name": "Created Engineer", "pan_number": "ABCDE1234F"},
-            files={"sign_image": ("signature.png", b"engineer-signature", "image/png")},
         )
         self.assertEqual(created_engineer.status_code, 200, created_engineer.text)
         engineer_id = created_engineer.json()["data"]["engineer_id"]
-        signature = created_engineer.json()["data"]["sign_image"]
-        self.assertEqual(
-            signature, "data:image/png;base64,ZW5naW5lZXItc2lnbmF0dXJl"
-        )
         updated_engineer = self.client.post(
             "/engineering",
             data={"engineer_id": engineer_id, "name": "Updated Engineer"},
@@ -357,7 +337,6 @@ class ApiSmokeTests(unittest.TestCase):
         self.assertEqual(
             updated_engineer.json()["data"]["name"], "Updated Engineer"
         )
-        self.assertEqual(updated_engineer.json()["data"]["sign_image"], signature)
 
     def test_bill_and_bill_item_endpoints(self):
         created = self.create_bill_item()
@@ -448,31 +427,10 @@ class ApiSmokeTests(unittest.TestCase):
             ).status_code,
             422,
         )
-        signature_data = "data:image/png;base64,dGVzdC1iaWxsLXNpZ25hdHVyZQ=="
-        signature_upload = self.client.post(
-            "/engineering",
-            data={"engineer_id": 0, "name": "Engineer Zero"},
-            files={
-                "sign_image": (
-                    "bill-signature.png",
-                    b"test-bill-signature",
-                    "image/png",
-                )
-            },
-        )
-        self.assertEqual(signature_upload.status_code, 200, signature_upload.text)
-        self.assertEqual(
-            signature_upload.json()["data"]["sign_image"], signature_data
-        )
-
-        rendered_templates = []
-
         class FakeHTML:
             def __init__(self, *args, **kwargs):
                 self.args = args
                 self.options = kwargs
-                if "string" in kwargs:
-                    rendered_templates.append(kwargs["string"])
 
             def render(self, **kwargs):
                 self.render_options = kwargs
@@ -498,10 +456,6 @@ class ApiSmokeTests(unittest.TestCase):
         ):
             pdf_data = self.client.get("/bills/pdf-data", params=date_range)
         self.assertEqual(pdf_data.status_code, 200, pdf_data.text)
-        self.assertTrue(
-            any(signature_data in html for html in rendered_templates),
-            "The bill PDF template should render the database Base64 signature.",
-        )
         self.assertEqual(
             self.client.get(
                 "/bills/pdf-data",
@@ -582,64 +536,6 @@ class ApiSmokeTests(unittest.TestCase):
                 files={"file": ("audio.wav", b"audio", "audio/wav")},
             )
         self.assertEqual(response.status_code, 200)
-
-    def test_speech_endpoint_persists_audio_and_transcript_in_database(self):
-        transcribe = Mock(return_value=SimpleNamespace(transcript="૧૫"))
-        fake_client = SimpleNamespace(
-            speech_to_text=SimpleNamespace(transcribe=transcribe)
-        )
-        audio_content = b"recorded-audio-bytes"
-        with patch("app.services.stt_service.stt_client", fake_client):
-            response = self.client.post(
-                "/stt/speech-to-text",
-                files={"file": ("recording.wav", audio_content, "audio/wav")},
-            )
-
-        self.assertEqual(response.status_code, 200, response.text)
-        result = response.json()["data"]
-        self.assertNotIn("inputFile", result)
-        self.assertNotIn("outputFile", result)
-        self.assertEqual(result["transcription"], "15")
-        self.assertEqual(
-            result["audioUrl"],
-            f"/stt/recordings/{result['recordingId']}/audio",
-        )
-
-        recording_response = self.client.get(
-            f"/stt/recordings/{result['recordingId']}"
-        )
-        self.assertEqual(recording_response.status_code, 200)
-        self.assertEqual(
-            recording_response.json()["data"]["transcription"], "15"
-        )
-        audio_response = self.client.get(result["audioUrl"])
-        self.assertEqual(audio_response.status_code, 200)
-        self.assertEqual(audio_response.content, audio_content)
-        self.assertEqual(audio_response.headers["content-type"], "audio/wav")
-
-        with self.session_factory() as db:
-            recording = db.get(SpeechRecording, result["recordingId"])
-            self.assertEqual(recording.audio_data, audio_content)
-            self.assertEqual(recording.transcript, "15")
-
-        bill_item_response = self.client.post(
-            "/bill-items",
-            json={
-                "vendor_id": 1,
-                "engineer_id": 0,
-                "items": [
-                    {
-                        "item_description": "Recorded fabrication item",
-                        "audio_file_url": result["audioUrl"],
-                    }
-                ],
-            },
-        )
-        self.assertEqual(bill_item_response.status_code, 200, bill_item_response.text)
-        self.assertEqual(
-            bill_item_response.json()["data"]["items"][0]["audio_file_url"],
-            result["audioUrl"],
-        )
 
 
 if __name__ == "__main__":
